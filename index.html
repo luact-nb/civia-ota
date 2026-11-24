@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#f7f8fa">
 <meta name="description" content="Civia for Android — download the latest APK and release notes.">
 <meta property="og:title" content="Civia for Android">
-<meta property="og:description" content="Download the latest Civia APK. Silent OTA updates included.">
+<meta property="og:description" content="Download the latest Civia APK for Android.">
 <meta property="og:image" content="app-icon.png">
 <title>Civia — Android</title>
 <link rel="icon" type="image/png" href="app-icon.png">
@@ -18,7 +18,6 @@
     --line: #e9eaee;
     --surface: #ffffff;
     --accent: #0fb9cf;
-    --accent-soft: #e8f8fa;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; }
@@ -105,39 +104,6 @@
     margin-left: auto; font-size: 12px; font-weight: 500;
     color: rgba(255, 255, 255, .6); letter-spacing: .02em;
   }
-  .links {
-    display: flex; justify-content: center; gap: 26px; margin-top: 20px;
-  }
-  .links a {
-    display: inline-flex; align-items: center; gap: 5px;
-    color: var(--ink-2); text-decoration: none; font-size: 13px;
-    transition: color .18s;
-  }
-  .links a:hover { color: var(--accent); }
-  .links svg { width: 12px; height: 12px; }
-
-  hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0 26px; }
-
-  /* highlights */
-  .features { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
-  .feature { display: flex; gap: 11px; }
-  .feature .ic {
-    flex: none; width: 32px; height: 32px; border-radius: 10px;
-    background: var(--accent-soft); color: #0a8fa3;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .feature .ic svg { width: 16px; height: 16px; }
-  .feature h3 { font-size: 13.5px; font-weight: 650; margin-bottom: 5px; }
-  .feature p { font-size: 12.5px; color: var(--ink-2); line-height: 1.65; }
-
-  .notice {
-    display: flex; gap: 10px; align-items: flex-start;
-    margin-top: 24px; padding: 13px 15px;
-    background: #f8f8fa; border-radius: 12px;
-    font-size: 12.5px; color: var(--ink-2); line-height: 1.65;
-  }
-  .notice svg { flex: none; width: 15px; height: 15px; margin-top: 2px; color: #b98216; }
-
   /* release notes */
   details { margin-top: 26px; border-top: 1px solid var(--line); padding-top: 20px; }
   summary {
@@ -170,7 +136,6 @@
     .card { padding: 40px 24px 28px; border-radius: 22px; }
     .app-icon { width: 84px; height: 84px; border-radius: 21px; margin-bottom: 18px; }
     h1 { font-size: 28px; }
-    .features { grid-template-columns: 1fr; gap: 18px; }
     .cta .meta { display: none; }
   }
 </style>
@@ -206,61 +171,6 @@
       <span class="meta">v1.0.5 · 3.9 MB</span>
     </a>
 
-    <div class="links">
-      <a href="version.json" target="_blank" rel="noopener">
-        <span data-i18n="manifest">更新清单</span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M7 17 17 7M8 7h9v9"/>
-        </svg>
-      </a>
-      <a href="https://github.com/luact-nb/civia-ota" target="_blank" rel="noopener">
-        <span data-i18n="repo">GitHub 仓库</span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M7 17 17 7M8 7h9v9"/>
-        </svg>
-      </a>
-    </div>
-
-    <hr>
-
-    <div class="features">
-      <div class="feature">
-        <span class="ic">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6"/>
-          </svg>
-        </span>
-        <div>
-          <h3 data-i18n="f1t">静默热更新</h3>
-          <p data-i18n="f1d">启动后自动检查并更新页面资源，无需重新安装 APK。</p>
-        </div>
-      </div>
-      <div class="feature">
-        <span class="ic">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 2 4 6v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10V6l-8-4Z"/>
-            <path d="m9 12 2 2 4-4"/>
-          </svg>
-        </span>
-        <div>
-          <h3 data-i18n="f2t">固定地址</h3>
-          <p data-i18n="f2d">托管于 GitHub Pages，地址永久有效，无需本机在线。</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="notice">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="12" cy="12" r="9"/><path d="M12 8v5m0 3h.01"/>
-      </svg>
-      <span data-i18n="notice">旧版 APK（≤ v1.0.3）内置的更新地址已失效，请直接覆盖安装本页最新版，数据会保留。</span>
-    </div>
-
     <details>
       <summary>
         <span data-i18n="logTitle">更新记录</span>
@@ -290,13 +200,6 @@
     zh: {
       subtitle: "Android 客户端 · 下载与更新",
       cta: "下载 APK",
-      manifest: "更新清单",
-      repo: "GitHub 仓库",
-      f1t: "静默热更新",
-      f1d: "启动后自动检查并更新页面资源，无需重新安装 APK。",
-      f2t: "固定地址",
-      f2d: "托管于 GitHub Pages，地址永久有效，无需本机在线。",
-      notice: "旧版 APK（≤ v1.0.3）内置的更新地址已失效，请直接覆盖安装本页最新版，数据会保留。",
       logTitle: "更新记录",
       l0v: "v1.0.11 · OTA", l0d: "修复长按说话被安卓系统长按打断、录音面板闪退的问题。",
       l1v: "v1.0.4 · APK", l1d: "更新站迁移至 GitHub Pages 固定地址，OTA 不再依赖临时隧道。",
@@ -308,13 +211,6 @@
     en: {
       subtitle: "Android app · Download & updates",
       cta: "Download APK",
-      manifest: "Update manifest",
-      repo: "GitHub repository",
-      f1t: "Silent OTA updates",
-      f1d: "Checks and applies web updates on launch — no reinstall needed.",
-      f2t: "Permanent address",
-      f2d: "Hosted on GitHub Pages. Always online, no local machine required.",
-      notice: "Builds ≤ v1.0.3 point to a retired update address. Install this version over the old one — your data is kept.",
       logTitle: "Release notes",
       l0v: "v1.0.11 · OTA", l0d: "Fixed hold-to-talk being cut off mid-press by the Android system long-press.",
       l1v: "v1.0.4 · APK", l1d: "Release station moved to GitHub Pages; OTA no longer depends on a temporary tunnel.",
