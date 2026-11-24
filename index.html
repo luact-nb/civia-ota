@@ -2,63 +2,348 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Civia — 安卓版下载与更新</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#f7f8fa">
+<meta name="description" content="Civia for Android — download the latest APK and release notes.">
+<meta property="og:title" content="Civia for Android">
+<meta property="og:description" content="Download the latest Civia APK. Silent OTA updates included.">
+<meta property="og:image" content="app-icon.png">
+<title>Civia — Android</title>
+<link rel="icon" type="image/png" href="app-icon.png">
 <style>
+  :root {
+    --ink: #15161a;
+    --ink-2: #5c5f6b;
+    --ink-3: #8d909c;
+    --line: #e9eaee;
+    --surface: #ffffff;
+    --accent: #0fb9cf;
+    --accent-soft: #e8f8fa;
+  }
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
   body {
-    font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif;
-    background: #f5f6f8; color: #1c1c1e;
-    display: flex; justify-content: center; padding: 48px 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                 "Hiragino Sans GB", "Helvetica Neue", Arial, sans-serif;
+    color: var(--ink);
+    background: linear-gradient(180deg, #fbfbfd 0%, #f2f3f7 100%);
+    min-height: 100vh; min-height: 100dvh;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 40px 18px 28px;
+    -webkit-font-smoothing: antialiased;
   }
   .card {
-    width: 100%; max-width: 460px; background: #fff;
-    border-radius: 20px; padding: 32px 28px;
-    box-shadow: 0 8px 32px rgba(0,0,0,.08);
+    position: relative; width: 100%; max-width: 480px;
+    background: var(--surface); border-radius: 26px;
+    padding: 46px 40px 34px;
+    box-shadow: 0 18px 50px rgba(18, 22, 40, .07), 0 2px 10px rgba(18, 22, 40, .035);
   }
-  .logo {
-    width: 84px; height: 84px; border-radius: 22px; overflow: hidden;
-    background: #05030C; margin: 0 auto 16px; box-shadow: 0 4px 16px rgba(0,0,0,.18);
+
+  /* language switch */
+  .lang {
+    position: absolute; top: 18px; right: 18px;
+    display: flex; gap: 2px; padding: 3px;
+    background: #f4f5f7; border-radius: 999px;
   }
-  .logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  h1 { font-size: 22px; text-align: center; margin-bottom: 6px; }
-  .ver { text-align: center; color: #8e8e93; font-size: 14px; margin-bottom: 24px; }
-  .btn {
-    display: block; width: 100%; padding: 15px; text-align: center;
-    background: #0A66D6; color: #fff; text-decoration: none;
-    border-radius: 14px; font-size: 16px; font-weight: 600; margin-bottom: 12px;
+  .lang button {
+    border: 0; background: transparent; cursor: pointer;
+    font: inherit; font-size: 12px; font-weight: 600; letter-spacing: .02em;
+    color: var(--ink-3); padding: 6px 12px; border-radius: 999px;
+    transition: color .18s, background .18s, box-shadow .18s;
   }
-  .btn.ghost { background: #eef2f8; color: #0A66D6; }
-  ul { margin: 20px 0 0; padding-left: 20px; color: #555; font-size: 14px; line-height: 1.9; }
-  .tip { margin-top: 20px; padding: 12px 14px; background: #f0f7ff; border-radius: 12px;
-         font-size: 13px; color: #0A66D6; line-height: 1.7; }
+  .lang button.active {
+    color: var(--ink); background: #fff;
+    box-shadow: 0 1px 4px rgba(18, 22, 40, .1);
+  }
+
+  /* brand */
+  .brand { text-align: center; }
+  .app-icon {
+    width: 96px; height: 96px; margin: 0 auto 22px;
+    border-radius: 24px; overflow: hidden;
+    box-shadow: 0 12px 30px rgba(6, 4, 16, .22), 0 2px 6px rgba(6, 4, 16, .12);
+    background: #05030c;
+  }
+  .app-icon img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .app-icon .fallback {
+    display: none; width: 100%; height: 100%;
+    align-items: center; justify-content: center;
+    color: var(--accent); font-size: 44px; font-weight: 700;
+  }
+  h1 {
+    font-size: 32px; font-weight: 650; letter-spacing: -.035em; line-height: 1.15;
+  }
+  .subtitle {
+    margin-top: 8px; font-size: 14px; color: var(--ink-2); letter-spacing: .01em;
+  }
+  .badges {
+    display: flex; justify-content: center; flex-wrap: wrap; gap: 8px;
+    margin-top: 22px;
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #f5f6f8; color: var(--ink-2);
+    font-size: 12px; font-weight: 550; letter-spacing: .01em;
+    padding: 7px 13px; border-radius: 999px; white-space: nowrap;
+  }
+  .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+  /* primary action */
+  .cta {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    margin-top: 30px; padding: 16px 20px; min-height: 56px;
+    background: #111318; color: #fff; text-decoration: none;
+    border-radius: 15px; font-size: 16px; font-weight: 600;
+    letter-spacing: .01em;
+    box-shadow: 0 8px 20px rgba(17, 19, 24, .16);
+    transition: transform .18s, box-shadow .18s, background .18s;
+  }
+  .cta:hover { background: #000; transform: translateY(-2px); box-shadow: 0 12px 26px rgba(17, 19, 24, .22); }
+  .cta:active { transform: translateY(0); }
+  .cta svg { width: 18px; height: 18px; flex: none; }
+  .cta .meta {
+    margin-left: auto; font-size: 12px; font-weight: 500;
+    color: rgba(255, 255, 255, .6); letter-spacing: .02em;
+  }
+  .links {
+    display: flex; justify-content: center; gap: 26px; margin-top: 20px;
+  }
+  .links a {
+    display: inline-flex; align-items: center; gap: 5px;
+    color: var(--ink-2); text-decoration: none; font-size: 13px;
+    transition: color .18s;
+  }
+  .links a:hover { color: var(--accent); }
+  .links svg { width: 12px; height: 12px; }
+
+  hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0 26px; }
+
+  /* highlights */
+  .features { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .feature { display: flex; gap: 11px; }
+  .feature .ic {
+    flex: none; width: 32px; height: 32px; border-radius: 10px;
+    background: var(--accent-soft); color: #0a8fa3;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .feature .ic svg { width: 16px; height: 16px; }
+  .feature h3 { font-size: 13.5px; font-weight: 650; margin-bottom: 5px; }
+  .feature p { font-size: 12.5px; color: var(--ink-2); line-height: 1.65; }
+
+  .notice {
+    display: flex; gap: 10px; align-items: flex-start;
+    margin-top: 24px; padding: 13px 15px;
+    background: #f8f8fa; border-radius: 12px;
+    font-size: 12.5px; color: var(--ink-2); line-height: 1.65;
+  }
+  .notice svg { flex: none; width: 15px; height: 15px; margin-top: 2px; color: #b98216; }
+
+  /* release notes */
+  details { margin-top: 26px; border-top: 1px solid var(--line); padding-top: 20px; }
+  summary {
+    list-style: none; cursor: pointer; display: flex; align-items: center;
+    justify-content: space-between; font-size: 13.5px; font-weight: 650;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary svg { width: 15px; height: 15px; color: var(--ink-3); transition: transform .2s; }
+  details[open] summary svg { transform: rotate(180deg); }
+  .log { margin-top: 18px; padding-left: 15px; border-left: 1px solid var(--line); }
+  .log li { list-style: none; position: relative; margin-bottom: 15px; font-size: 12.5px; line-height: 1.6; color: var(--ink-2); }
+  .log li:last-child { margin-bottom: 2px; }
+  .log li::before {
+    content: ""; position: absolute; left: -19px; top: 6px;
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #fff; border: 1.5px solid #c9ccd4;
+  }
+  .log li:first-child::before { background: var(--accent); border-color: var(--accent); }
+  .log b { color: var(--ink); font-weight: 650; }
+
+  footer {
+    margin-top: 28px; text-align: center;
+    font-size: 11.5px; color: var(--ink-3); letter-spacing: .02em;
+  }
+  footer a { color: var(--ink-3); text-decoration: none; }
+  footer a:hover { color: var(--accent); }
+
+  @media (max-width: 480px) {
+    body { padding: 22px 14px 20px; justify-content: flex-start; }
+    .card { padding: 40px 24px 28px; border-radius: 22px; }
+    .app-icon { width: 84px; height: 84px; border-radius: 21px; margin-bottom: 18px; }
+    h1 { font-size: 28px; }
+    .features { grid-template-columns: 1fr; gap: 18px; }
+    .cta .meta { display: none; }
+  }
 </style>
 </head>
 <body>
-  <div class="card">
-    <div class="logo"><img src="app-icon.png" alt="Civia"></div>
-    <h1>Civia 安卓版</h1>
-    <div class="ver">当前 APK 版本 v1.0.4 · 最新热更新版本 v1.0.10</div>
-    <a class="btn" href="Civia.apk" download="Civia.apk">下载安装 APK（v1.0.4）</a>
-    <a class="btn ghost" href="version.json" target="_blank">查看 version.json</a>
-    <div class="tip">
-      安装后 App 会在启动约 3 秒后自动检查更新，发现新版本会提示并静默热更页面资源，完成后自动刷新（无需重新安装 APK）。<br><br>
-      <b>如果你之前点「版本」出现「检查更新失败: &lt;!DOCTYPE…」报错，请重新下载安装本页 APK 覆盖安装</b>（无需卸载，数据保留）。旧版内置的更新地址有误，热更无法自救，必须靠新 APK 修复。
+  <main class="card">
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" data-lang="zh" aria-pressed="true">中</button>
+      <button type="button" data-lang="en" aria-pressed="false">EN</button>
     </div>
-    <ul>
-      <li>v1.0.4（APK）— 更新站迁移至 GitHub Pages 固定地址，OTA 不再依赖临时隧道</li>
-      <li>v1.0.10（热更）— 生信分析工作站改为离线状态（25% 黑图标），离线设备不可点击切换</li>
-      <li>v1.0.9（热更）— 修复长按说话未松手就切到文字输入焦点的问题（录音期间保持胶囊态）</li>
-      <li>v1.0.8（热更）— 「我的」页版本行图标换为 Figma 设计稿的 icon_ai_l</li>
-      <li>v1.0.7（热更）— 修复在线更新链路：stamp 完整 version.json 地址，原生层回传结构修正</li>
-      <li>v1.0.6（热更）— 长按说话交互优化（300ms 触发 + 震动反馈）</li>
-      <li>v1.0.2（APK）— 升级时自动清理旧热更包</li>
-      <li>v1.0.1（APK）— 修复「检查更新失败」报错</li>
-      <li>v1.0.0（APK）— 首发版本</li>
-    </ul>
-    <p style="margin-top:14px;font-size:12px;color:#999;line-height:1.6">
-      当前为临时免费隧道托管，地址在隧道重启后会变化；届时已安装的 APK 需重新打包指向新地址。
-    </p>
-  </div>
+
+    <div class="brand">
+      <div class="app-icon">
+        <img src="app-icon.png" alt="Civia app icon"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <span class="fallback" aria-hidden="true">C</span>
+      </div>
+      <h1>Civia</h1>
+      <p class="subtitle" data-i18n="subtitle">Android 客户端 · 下载与更新</p>
+      <div class="badges">
+        <span class="badge"><span class="dot"></span>APK v1.0.4</span>
+        <span class="badge">OTA v1.0.10</span>
+        <span class="badge">3.9 MB</span>
+      </div>
+    </div>
+
+    <a class="cta" href="Civia.apk" download="Civia.apk">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
+      </svg>
+      <span data-i18n="cta">下载 APK</span>
+      <span class="meta">v1.0.4 · 3.9 MB</span>
+    </a>
+
+    <div class="links">
+      <a href="version.json" target="_blank" rel="noopener">
+        <span data-i18n="manifest">更新清单</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7 17 17 7M8 7h9v9"/>
+        </svg>
+      </a>
+      <a href="https://github.com/luact-nb/civia-ota" target="_blank" rel="noopener">
+        <span data-i18n="repo">GitHub 仓库</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7 17 17 7M8 7h9v9"/>
+        </svg>
+      </a>
+    </div>
+
+    <hr>
+
+    <div class="features">
+      <div class="feature">
+        <span class="ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6"/>
+          </svg>
+        </span>
+        <div>
+          <h3 data-i18n="f1t">静默热更新</h3>
+          <p data-i18n="f1d">启动后自动检查并更新页面资源，无需重新安装 APK。</p>
+        </div>
+      </div>
+      <div class="feature">
+        <span class="ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 2 4 6v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10V6l-8-4Z"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+        </span>
+        <div>
+          <h3 data-i18n="f2t">固定地址</h3>
+          <p data-i18n="f2d">托管于 GitHub Pages，地址永久有效，无需本机在线。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="notice">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"/><path d="M12 8v5m0 3h.01"/>
+      </svg>
+      <span data-i18n="notice">旧版 APK（≤ v1.0.3）内置的更新地址已失效，请直接覆盖安装本页最新版，数据会保留。</span>
+    </div>
+
+    <details>
+      <summary>
+        <span data-i18n="logTitle">更新记录</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="m6 9 6 6 6-6"/>
+        </svg>
+      </summary>
+      <ul class="log">
+        <li><b data-i18n="l1v">v1.0.4 · APK</b> — <span data-i18n="l1d">更新站迁移至 GitHub Pages 固定地址，OTA 不再依赖临时隧道。</span></li>
+        <li><b data-i18n="l2v">v1.0.10 · OTA</b> — <span data-i18n="l2d">生信分析工作站改为离线状态（25% 黑图标），离线设备不可点击切换。</span></li>
+        <li><b data-i18n="l3v">v1.0.9 · OTA</b> — <span data-i18n="l3d">修复长按说话未松手就切到文字输入焦点的问题。</span></li>
+        <li><b data-i18n="l4v">v1.0.8 · OTA</b> — <span data-i18n="l4d">「我的」页版本行图标换为 Figma 设计稿图标。</span></li>
+      </ul>
+    </details>
+
+    <footer>
+      © 2026 Civia · <span data-i18n="hosted">Hosted on GitHub Pages</span> ·
+      <a href="https://github.com/luact-nb/civia-ota" target="_blank" rel="noopener">GitHub</a>
+    </footer>
+  </main>
+
+<script>
+(function () {
+  var dict = {
+    zh: {
+      subtitle: "Android 客户端 · 下载与更新",
+      cta: "下载 APK",
+      manifest: "更新清单",
+      repo: "GitHub 仓库",
+      f1t: "静默热更新",
+      f1d: "启动后自动检查并更新页面资源，无需重新安装 APK。",
+      f2t: "固定地址",
+      f2d: "托管于 GitHub Pages，地址永久有效，无需本机在线。",
+      notice: "旧版 APK（≤ v1.0.3）内置的更新地址已失效，请直接覆盖安装本页最新版，数据会保留。",
+      logTitle: "更新记录",
+      l1v: "v1.0.4 · APK", l1d: "更新站迁移至 GitHub Pages 固定地址，OTA 不再依赖临时隧道。",
+      l2v: "v1.0.10 · OTA", l2d: "生信分析工作站改为离线状态（25% 黑图标），离线设备不可点击切换。",
+      l3v: "v1.0.9 · OTA", l3d: "修复长按说话未松手就切到文字输入焦点的问题。",
+      l4v: "v1.0.8 · OTA", l4d: "「我的」页版本行图标换为 Figma 设计稿图标。",
+      hosted: "Hosted on GitHub Pages"
+    },
+    en: {
+      subtitle: "Android app · Download & updates",
+      cta: "Download APK",
+      manifest: "Update manifest",
+      repo: "GitHub repository",
+      f1t: "Silent OTA updates",
+      f1d: "Checks and applies web updates on launch — no reinstall needed.",
+      f2t: "Permanent address",
+      f2d: "Hosted on GitHub Pages. Always online, no local machine required.",
+      notice: "Builds ≤ v1.0.3 point to a retired update address. Install this version over the old one — your data is kept.",
+      logTitle: "Release notes",
+      l1v: "v1.0.4 · APK", l1d: "Release station moved to GitHub Pages; OTA no longer depends on a temporary tunnel.",
+      l2v: "v1.0.10 · OTA", l2d: "Bioinfo Workstation is now offline (25% black icon) and cannot be selected.",
+      l3v: "v1.0.9 · OTA", l3d: "Fixed voice recording losing focus before release.",
+      l4v: "v1.0.8 · OTA", l4d: "Updated the version-row icon in the Profile page.",
+      hosted: "Hosted on GitHub Pages"
+    }
+  };
+
+  function setLang(l) {
+    document.documentElement.lang = (l === "zh" ? "zh-CN" : "en");
+    document.querySelectorAll("[data-i18n]").forEach(function (el) {
+      var v = dict[l][el.dataset.i18n];
+      if (v != null) el.textContent = v;
+    });
+    document.querySelectorAll("[data-lang]").forEach(function (b) {
+      var on = b.dataset.lang === l;
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+    try { localStorage.setItem("civia-lang", l); } catch (e) {}
+  }
+
+  var saved = null;
+  try { saved = localStorage.getItem("civia-lang"); } catch (e) {}
+  var initial = saved || ((navigator.language || "").toLowerCase().indexOf("zh") === 0 ? "zh" : "en");
+  document.querySelectorAll("[data-lang]").forEach(function (b) {
+    b.addEventListener("click", function () { setLang(b.dataset.lang); });
+  });
+  setLang(dict[initial] ? initial : "zh");
+})();
+</script>
 </body>
 </html>
