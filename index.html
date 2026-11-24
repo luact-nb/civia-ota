@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Civia — 安卓版下载与更新</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif;
+    background: #f5f6f8; color: #1c1c1e;
+    display: flex; justify-content: center; padding: 48px 16px;
+  }
+  .card {
+    width: 100%; max-width: 460px; background: #fff;
+    border-radius: 20px; padding: 32px 28px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.08);
+  }
+  .logo {
+    width: 84px; height: 84px; border-radius: 22px; overflow: hidden;
+    background: #05030C; margin: 0 auto 16px; box-shadow: 0 4px 16px rgba(0,0,0,.18);
+  }
+  .logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  h1 { font-size: 22px; text-align: center; margin-bottom: 6px; }
+  .ver { text-align: center; color: #8e8e93; font-size: 14px; margin-bottom: 24px; }
+  .btn {
+    display: block; width: 100%; padding: 15px; text-align: center;
+    background: #0A66D6; color: #fff; text-decoration: none;
+    border-radius: 14px; font-size: 16px; font-weight: 600; margin-bottom: 12px;
+  }
+  .btn.ghost { background: #eef2f8; color: #0A66D6; }
+  ul { margin: 20px 0 0; padding-left: 20px; color: #555; font-size: 14px; line-height: 1.9; }
+  .tip { margin-top: 20px; padding: 12px 14px; background: #f0f7ff; border-radius: 12px;
+         font-size: 13px; color: #0A66D6; line-height: 1.7; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo"><img src="app-icon.png" alt="Civia"></div>
+    <h1>Civia 安卓版</h1>
+    <div class="ver">当前 APK 版本 v1.0.4 · 最新热更新版本 v1.0.10</div>
+    <a class="btn" href="Civia.apk" download="Civia.apk">下载安装 APK（v1.0.4）</a>
+    <a class="btn ghost" href="version.json" target="_blank">查看 version.json</a>
+    <div class="tip">
+      安装后 App 会在启动约 3 秒后自动检查更新，发现新版本会提示并静默热更页面资源，完成后自动刷新（无需重新安装 APK）。<br><br>
+      <b>如果你之前点「版本」出现「检查更新失败: &lt;!DOCTYPE…」报错，请重新下载安装本页 APK 覆盖安装</b>（无需卸载，数据保留）。旧版内置的更新地址有误，热更无法自救，必须靠新 APK 修复。
+    </div>
+    <ul>
+      <li>v1.0.4（APK）— 更新站迁移至 GitHub Pages 固定地址，OTA 不再依赖临时隧道</li>
+      <li>v1.0.10（热更）— 生信分析工作站改为离线状态（25% 黑图标），离线设备不可点击切换</li>
+      <li>v1.0.9（热更）— 修复长按说话未松手就切到文字输入焦点的问题（录音期间保持胶囊态）</li>
+      <li>v1.0.8（热更）— 「我的」页版本行图标换为 Figma 设计稿的 icon_ai_l</li>
+      <li>v1.0.7（热更）— 修复在线更新链路：stamp 完整 version.json 地址，原生层回传结构修正</li>
+      <li>v1.0.6（热更）— 长按说话交互优化（300ms 触发 + 震动反馈）</li>
+      <li>v1.0.2（APK）— 升级时自动清理旧热更包</li>
+      <li>v1.0.1（APK）— 修复「检查更新失败」报错</li>
+      <li>v1.0.0（APK）— 首发版本</li>
+    </ul>
+    <p style="margin-top:14px;font-size:12px;color:#999;line-height:1.6">
+      当前为临时免费隧道托管，地址在隧道重启后会变化；届时已安装的 APK 需重新打包指向新地址。
+    </p>
+  </div>
+</body>
+</html>
