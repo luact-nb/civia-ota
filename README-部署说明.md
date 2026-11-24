@@ -4,7 +4,7 @@
 
 - **更新站地址**：`https://luact-nb.github.io/civia-ota/`（GitHub Pages，固定地址）
 - **手机下载页**：`https://luact-nb.github.io/civia-ota/`（APK 直链 `/Civia.apk`）
-- **当前版本**：APK v1.0.4（versionCode 5，内置 web 基线 v1.0.9）；线上热更 v1.0.10
+- **当前版本**：APK v1.0.5（versionCode 6，内置 web 基线 v1.0.10）；线上热更 v1.0.11
 - **本次修复（2026-11-23）**：修正「检查更新失败: Value <!DOCTYPE …」报错，见文末「排障」。
   ⚠️ **已安装旧版的用户必须重新下载安装本页 APK 覆盖安装**（无需卸载，数据保留），
   因为坏地址写死在旧包里，热更无法自救。
@@ -19,10 +19,10 @@
 
 | 文件 | 作用 |
 |---|---|
-| `Civia.apk` | 安卓安装包 v1.0.4（内置 web 基线 v1.0.9，已注入完整 `/version.json` 地址） |
+| `Civia.apk` | 安卓安装包 v1.0.5（内置 web 基线 v1.0.10，已注入完整 `/version.json` 地址） |
 | `index.html` | 下载页（手机浏览器打开即可下载 APK） |
-| `version.json` | 热更新清单：`{version, url, notes}`（当前 v1.0.10） |
-| `web.zip` | 热更新资源包 v1.0.10（index.html + assets/，约 3.5 MB） |
+| `version.json` | 热更新清单：`{version, url, notes}`（当前 v1.0.11） |
+| `web.zip` | 热更新资源包 v1.0.11（index.html + assets/，约 3.5 MB） |
 | `update-web.sh` | 发新热更版本时重新生成上面两项 |
 | `app-icon.png` | 启动图标（同时用于下载页 logo） |
 
