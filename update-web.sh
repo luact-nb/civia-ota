@@ -2,14 +2,17 @@
 # Regenerate the online web bundle + version.json for OTA hot update.
 #
 # Usage:
-#   ./update-web.sh 1.0.2 https://your.host/ota
+#   ./update-web.sh 1.0.2 https://your.host/ota [更新说明]
 #
 #   arg1 = new WEB_VERSION (must be greater than the current one)
 #   arg2 = the public base URL where this civia-ota directory is hosted
 #          (no trailing slash)
+#   arg3 = optional release note for this version; it is prepended to the
+#          version.json "log" array (previous entries are preserved, cap 20)
+#          and shown in the app's Version Details sheet.
 set -e
-VER="${1:?usage: ./update-web.sh <version> <base-url>}"
-BASE="${2:?usage: ./update-web.sh <version> <base-url>}"
+VER="${1:?usage: ./update-web.sh <version> <base-url> [更新说明]}"
+BASE="${2:?usage: ./update-web.sh <version> <base-url> [更新说明]}"
 BASE="${BASE%/}"
 case "$BASE" in
   */version.json) BASE="${BASE%/version.json}" ;;
@@ -43,13 +46,29 @@ PY
 
 cd "$HERE/www" && rm -f "$HERE/web.zip" && zip -qr "$HERE/web.zip" index.html assets
 
-cat > "$HERE/version.json" <<EOF
-{
-  "version": "$VER",
-  "url": "$BASE/web.zip",
-  "notes": "在线热更新"
-}
-EOF
+NOTES="${3:-在线热更新}"
+
+# version.json now carries a "log" changelog (newest first). Previous entries
+# survive across releases so the app's Version Details sheet can list history.
+python3 - "$HERE/version.json" "$VER" "$NOTES" "$BASE" <<'PY'
+import json, os, sys
+p, ver, notes, base = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+log = []
+if os.path.exists(p):
+    try:
+        old = json.load(open(p))
+        if isinstance(old, dict) and isinstance(old.get('log'), list):
+            log = old['log']
+    except Exception:
+        pass
+log = [e for e in log if isinstance(e, dict) and e.get('v') != ver]
+log.insert(0, {'v': ver, 'd': notes})
+log = log[:20]
+manifest = {'version': ver, 'url': base + '/web.zip', 'notes': notes, 'log': log}
+with open(p, 'w') as f:
+    json.dump(manifest, f, ensure_ascii=False, indent=2)
+    f.write('\n')
+PY
 
 echo "OK: web.zip + version.json regenerated for v$VER"
 echo "    upload civia-ota/ to $BASE (index.html, version.json, web.zip, Civia.apk)"
