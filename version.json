@@ -1,8 +1,12 @@
 {
-  "version": "1.0.14",
+  "version": "1.0.15",
   "url": "https://luact-nb.github.io/civia-ota/web.zip",
-  "notes": "任务页与通知页底部渐变遮罩对齐 Figma：48px 均匀渐变无缝衔接 tabbar",
+  "notes": "发现板块上线：新增 Discover 页（hero/彩色卡片/四行入口）+ 深色模式配色与未选中图标对齐 Figma；修复安卓 MAC 设备图标不显示",
   "log": [
+    {
+      "v": "1.0.15",
+      "d": "发现板块上线：新增 Discover 页（hero/彩色卡片/四行入口）+ 深色模式配色与未选中图标对齐 Figma；修复安卓 MAC 设备图标不显示"
+    },
     {
       "v": "1.0.14",
       "d": "任务页与通知页底部渐变遮罩对齐 Figma：48px 均匀渐变无缝衔接 tabbar"
