@@ -7533,7 +7533,7 @@
   // ============ Android APK shell bridge ============
   // Only active in app mode, where the native shell injects window.CiviaNative.
   // Covers: (1) OTA hot update of the web bundle, (2) system back button.
-  const WEB_VERSION = '1.0.30';
+  const WEB_VERSION = '1.0.31';
   const UPDATE_URL = 'https://luact-nb.github.io/civia-ota/version.json';
 
   // "Me" page version row — shows the running bundle version in every mode;
@@ -7723,8 +7723,13 @@
     showBubble();
     renderVerPage();
     if (IS_APP && window.CiviaNative) {
-      try { window.CiviaNative.downloadUpdate(verState.update.url); }
-      catch (err) { finishDownload(false, String(err && err.message || err)); }
+      const url = verState.update.url;
+      // Let the progress dialog paint before the bridge call.
+      setTimeout(() => {
+        if (!verState.downloading) return;
+        try { window.CiviaNative.downloadUpdate(url); }
+        catch (err) { finishDownload(false, String(err && err.message || err)); }
+      }, 0);
     } else {
       if (window.__otaMockCfg && window.__otaMockCfg.auto === false) return;
       let p = 0;
