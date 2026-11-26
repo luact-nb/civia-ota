@@ -5998,28 +5998,43 @@
     cmpLine.scrollTop = cmpLine.scrollHeight;                // follow the caret
     cmpFloat();
   }
+  // Edge-to-edge Android reports a stable status/nav inset even when the
+  // IME is closed. Remember the smallest inset and only treat a further
+  // shrink (the real keyboard) as "keyboard up". A flat 80px check used to
+  // stay true after the keyboard closed, so the card and its opaque veil
+  // sat on top of the tab bar (home, project, and chat share this composer).
+  const TAB_TOP = 852 - 33 - 49;                   // tab bar top, design px
+  let vvChrome = null;
+  function vvInset() {
+    const vv = window.visualViewport;
+    if (!vv) return 0;
+    return Math.max(0, window.innerHeight - (vv.height + vv.offsetTop));
+  }
+  function keyboardUp() {
+    if (!IS_TOUCH) return phone.classList.contains('kb-open');
+    const inset = vvInset();
+    if (vvChrome === null || inset < vvChrome) vvChrome = inset;
+    return inset > vvChrome + 80;
+  }
+  if (IS_TOUCH && window.visualViewport) vvChrome = vvInset();
+
   // Keep the composer's bottom edge 16px above whatever is under it —
-  // the keyboard top while typing (852 - kb height), otherwise the tab
-  // bar (852 - 49) — so a taller card (layers, long text) never slides
-  // behind them.
+  // the keyboard top while typing, otherwise the tab bar — so a taller
+  // card never slides behind them, and the tab bar stays visible once
+  // the keyboard is gone.
   function cmpFloat() {
     if (!phone.classList.contains('cmp-open')) return;
     const cr = pageEl.getBoundingClientRect();
     const scale = cr.width / 393 || 1;
+    const kbUp = keyboardUp();
     let targetBottom;
-    if (IS_TOUCH) {
-      // Real keyboard: measure it from the visual viewport. When the
-      // viewport shrinks (keyboard up) the card lands 16px above its top.
+    if (IS_TOUCH && kbUp) {
       const vv = window.visualViewport;
-      const kbUp = vv && (vv.height + vv.offsetTop) < window.innerHeight - 80;
-      targetBottom = kbUp
-        ? (vv.height - phone.getBoundingClientRect().top) / scale - 16
-        : 852 - 33 - 49 - 16;                       // docked above the tab bar
+      targetBottom = (vv.height - phone.getBoundingClientRect().top) / scale - 16;
+    } else if (!IS_TOUCH && kbUp) {
+      targetBottom = 852 - iosKb.offsetHeight - 16; // 16px gap per spec
     } else {
-      targetBottom = phone.classList.contains('kb-open')
-        ? 852 - iosKb.offsetHeight - 16             // 16px gap per spec
-        : 852 - 33 - 49 - 16;                       // docked: 16px above the
-                                                    // tab bar (bottom:33, h49)
+      targetBottom = TAB_TOP - 16;                   // 16px above the tab bar
     }
     composerEl.style.transform =
       `translateY(${(targetBottom - cmpTopBase).toFixed(1)}px)`;
@@ -6035,9 +6050,13 @@
     const cmpTopY = (cmpRect.top - phoneRect.top) / s;
     const cmpBotY = (cmpRect.bottom - phoneRect.top) / s;
     const foot = Math.max(0, 852 - cmpTopY);
-    // Opaque plate from card bottom down to phone bottom (+ tuck). Keep a
-    // floor so the keyboard gap is always fully covered even mid-measure.
-    const veil = Math.max(48, Math.min(280, 852 - cmpBotY + 12));
+    // Use the target dock, not the in-flight rect: a transition would
+    // otherwise measure the card still over the tab bar and leave the
+    // veil there. Keyboard up: cover down to the phone bottom (tab bar
+    // is behind the IME). Keyboard down: stop at the tab bar.
+    const veil = kbUp
+      ? Math.max(48, Math.min(280, 852 - targetBottom + 12))
+      : Math.max(4, Math.min(36, TAB_TOP - targetBottom + 4));
     phone.style.setProperty('--cmp-foot', foot.toFixed(1) + 'px');
     phone.style.setProperty('--cmp-veil-h', veil.toFixed(1) + 'px');
   }
@@ -6059,7 +6078,7 @@
     const rect = phone.getBoundingClientRect();
     const scale = rect.width / 393 || 1;
     const kbTopView = vv.height + vv.offsetTop;
-    const kbUp = window.innerHeight - kbTopView > 80;
+    const kbUp = keyboardUp();
     // Drive both .sch-scroll and .sch-fade via one token so the fade
     // never desyncs when the real IME height differs from the 252px stub.
     if (kbUp) {
@@ -7495,7 +7514,7 @@
   // ============ Android APK shell bridge ============
   // Only active in app mode, where the native shell injects window.CiviaNative.
   // Covers: (1) OTA hot update of the web bundle, (2) system back button.
-  const WEB_VERSION = '1.0.27';
+  const WEB_VERSION = '1.0.28';
   const UPDATE_URL = 'https://luact-nb.github.io/civia-ota/version.json';
 
   // "Me" page version row — shows the running bundle version in every mode;
