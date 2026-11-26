@@ -30,13 +30,16 @@
        1-2px seam left by uniform scaling can never show as a light border. */
     --stage-bg: #ececec;
     --tabbar-top: 82px;   /* tab bar top edge = bottom(33) + height(49) */
-    /* Bottom-fade recipe (global):
-       1) Soft 16px ramp ABOVE chrome (list → tabbar / composer / keyboard).
-       2) Chrome itself (tabbar / composer veil) is fully opaque — never a
-          semi-transparent band where text can bleed through.
-       3) --fade-tab-overlap seals scale() hairlines into opaque chrome. */
-    --fade-soft-h: 16px;
+    /* Bottom-fade recipe (Figma 3376:161856 / 3376:161857):
+       1) Soft 24px ramp ABOVE chrome — Transparency/0% → BgBase.
+       2) Chrome under the fade (composer + 16px gap + tabbar) is a solid
+          BgBase plate — never a semi-transparent band or a hard 2px strip.
+       3) --fade-tab-overlap only tucks the SAME opaque end-color into chrome
+          under scale(); it must not paint a separate hard seal line. */
+    --fade-soft-h: 24px;
     --fade-tab-overlap: 2px;
+    /* Docked composer top (Figma 3376:161858): tabbar 82 + gap 16 + pill ~60. */
+    --cmp-dock-foot: 158px;
     --bg-container: #ffffff;
     --bg-layout: #f5f5f5;
     /* Conversation surface: pure white like the home page; user turns are
@@ -404,9 +407,9 @@
      area scrolls while the toolbar stays fixed. JS floats the composer
      above the keyboard (iOS order: input rides the keyboard top). */
   .composer { width: 361px; position: relative; }
-  /* Soft veil UNDER the open card only (never over it): chat text in the
-     gap above the keyboard fades out over 16px. Pill/card stay at z-index 1
-     so the veil cannot dim the input — avoid z-index:-1 WebView bugs. */
+  /* Soft veil UNDER the open card only (never over it). Pill/card stay at
+     z-index 1 so the veil cannot dim the input — avoid z-index:-1 WebView
+     bugs. Soft fade above the card is .chat-fade / .pj-fade (Figma 24px). */
   .phone.cmp-open .composer {
     z-index: 5;
   }
@@ -1128,6 +1131,7 @@
   .drawer-inner::-webkit-scrollbar { display: none; }
 
   .drawer-fade {
+    /* Same 24px soft recipe; end color is fully opaque BgBase (no hard strip). */
     position: absolute;
     left: 0; right: 0; bottom: 0;
     height: var(--fade-soft-h);
@@ -1546,7 +1550,7 @@
   }
 
   .task-fade {
-    /* Soft 16px ramp into the opaque tab bar (global fade recipe). */
+    /* Soft 24px ramp into the opaque tab bar (Figma 3376:161857). */
     position: absolute;
     left: 0; right: 0;
     bottom: calc(var(--tabbar-top) - var(--fade-tab-overlap));
@@ -1604,12 +1608,13 @@
   .pj-scroll {
     position: absolute;
     left: 0; right: 0;
-    top: 211px; bottom: 174px;
+    /* Same dock foot as chat — soft fade meets composer top (no empty band). */
+    top: 211px; bottom: var(--cmp-dock-foot);
     overflow-y: auto;
     scrollbar-width: none;
   }
   /* cmp-open: foot tracks the floated composer top via --cmp-foot (cmpFloat). */
-  .phone.cmp-open .pj-scroll { bottom: var(--cmp-foot, 174px); }
+  .phone.cmp-open .pj-scroll { bottom: var(--cmp-foot, var(--cmp-dock-foot)); }
   .pj-scroll::-webkit-scrollbar { display: none; }
   .pj-list {
     width: 361px;
@@ -1666,16 +1671,18 @@
   }
 
   .pj-fade {
-    /* Soft ramp at scroll foot — never into the composer (z under card). */
+    /* Figma 3376:161857 — 24px soft ramp into opaque BgBase at composer top. */
     position: absolute;
     left: 0; right: 0;
-    bottom: 174px;
-    height: var(--fade-soft-h);
+    bottom: calc(var(--cmp-dock-foot) - var(--fade-tab-overlap));
+    height: calc(var(--fade-soft-h) + var(--fade-tab-overlap));
     background: linear-gradient(to bottom, var(--fade-start), var(--bg-base));
     z-index: 0;
     pointer-events: none;
   }
-  .phone.cmp-open .pj-fade { bottom: var(--cmp-foot, 174px); }
+  .phone.cmp-open .pj-fade {
+    bottom: calc(var(--cmp-foot, var(--cmp-dock-foot)) - var(--fade-tab-overlap));
+  }
   .pj-input {
     position: absolute;
     left: 16px;
@@ -1772,13 +1779,14 @@
 
   .chat-scroll {
     position: absolute; left: 0; right: 0;
-    top: 140px; bottom: 160px;              /* clears docked pill (tabbar 82 + pill 56 + gap) */
+    /* Clears docked pill top (Figma 3376:161858 / --cmp-dock-foot). */
+    top: 140px; bottom: var(--cmp-dock-foot);
     overflow-y: auto;
     scrollbar-width: none;
     padding: 12px 20px 24px;
   }
   /* cmp-open: foot tracks floated composer top (--cmp-foot from cmpFloat). */
-  .phone.cmp-open .chat-scroll { bottom: var(--cmp-foot, 224px); }
+  .phone.cmp-open .chat-scroll { bottom: var(--cmp-foot, var(--cmp-dock-foot)); }
   .chat-scroll::-webkit-scrollbar { display: none; }
   .chat-list { width: 100%; display: flex; flex-direction: column; gap: 24px; }
 
@@ -1923,7 +1931,9 @@
 
   /* Floating "jump to latest" button + soft fade above the composer. */
   .chat-jump {
-    position: absolute; left: 50%; bottom: 174px; z-index: 3;
+    /* Sit just above the 24px soft fade (Figma 3376:161857). */
+    position: absolute; left: 50%;
+    bottom: calc(var(--cmp-dock-foot) + var(--fade-soft-h) + 8px); z-index: 3;
     transform: translateX(-50%);
     width: 36px; height: 36px; padding: 0; border-radius: 18px;
     border: 1px solid var(--border-2); background: var(--bg-container);
@@ -1935,22 +1945,23 @@
   .chat-jump img { width: 20px; height: 20px; opacity: 0.65; }
   .chat-jump.hidden { opacity: 0; pointer-events: none; }
   .chat-fade {
-    /* Soft ramp at scroll foot — never into the composer. */
+    /* Figma 3376:161857: 24px Transparency/0% → BgBase above the solid
+       composer+tabbar plate (3376:161858). Overlap only extends the same
+       end-color under scale — no hard strip. */
     position: absolute; left: 0; right: 0;
-    bottom: 160px;
-    height: var(--fade-soft-h);
+    bottom: calc(var(--cmp-dock-foot) - var(--fade-tab-overlap));
+    height: calc(var(--fade-soft-h) + var(--fade-tab-overlap));
     z-index: 1;
     pointer-events: none;
     background: linear-gradient(to bottom, var(--fade-start), var(--chat-bg));
   }
-  .phone.cmp-open .chat-fade { bottom: var(--cmp-foot, 224px); }
+  .phone.cmp-open .chat-fade {
+    bottom: calc(var(--cmp-foot, var(--cmp-dock-foot)) - var(--fade-tab-overlap));
+  }
 
   .chat-view .bottom {
-    /* Same docked position as the home view: composer bottom sits 18px above
-       the shared tab bar (home: y=776 / tab bar: y=794). The #composer node
-       itself is the very same element, so pill/card/keyboard behaviour is
-       identical to home — only this host anchor needed aligning. */
-    position: absolute; left: 0; right: 0; bottom: 100px;
+    /* Figma 3376:161858: 16px gap above tab bar (top 82) → host bottom 98. */
+    position: absolute; left: 0; right: 0; bottom: 98px;
     z-index: 5;                     /* always above .chat-fade */
     display: flex; flex-direction: column; align-items: center;
   }
@@ -7488,7 +7499,7 @@
   // ============ Android APK shell bridge ============
   // Only active in app mode, where the native shell injects window.CiviaNative.
   // Covers: (1) OTA hot update of the web bundle, (2) system back button.
-  const WEB_VERSION = '1.0.21';
+  const WEB_VERSION = '1.0.22';
   const UPDATE_URL = 'https://luact-nb.github.io/civia-ota/version.json';
 
   // "Me" page version row — shows the running bundle version in every mode;
