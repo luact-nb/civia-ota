@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<html lang="en" data-page-node-id="BXJLhdkz79GfJ0UFrlUd62">
+<head data-page-node-id="8RRWIA9vLbK220UN0avOVd">
+<meta charset="UTF-8" data-page-node-id="OuElRxzBBUm8az2rqEfc2J">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" data-page-node-id="M2krBwJsnIlMxxycENyBM1">
 <script>
   // Android APK shell marks the WebView UA with "CiviaAndroid" — switch the
   // prototype into app mode (system status bar / home indicator / IME).
@@ -19,6 +19,12 @@
     --black-45: rgba(0, 0, 0, 0.45);
     --black-25: rgba(0, 0, 0, 0.25);
     --bg-base: #ffffff;
+    /* Figma token "Transparency/透明度/0%" used by the bottom-stack fade
+       (3375:161256, formerly 3101:155388 / 2839:52388). Kept as a variable so dark mode can swap
+       in plain transparent: both are alpha=0 (identical under premultiplied
+       interpolation), but a white-transparent start makes some Android
+       WebViews interpolate a grey haze against the near-black bg-base. */
+    --fade-start: rgba(255, 255, 255, 0);
     /* Neutral canvas behind the device frame on desktop preview only.
        On a real phone (app-mode) this is replaced by --bg-base so that the
        1-2px seam left by uniform scaling can never show as a light border. */
@@ -77,6 +83,7 @@
     --black-45: rgba(255, 255, 255, 0.45);
     --black-25: rgba(255, 255, 255, 0.25);
     --bg-base: #171717;
+    --fade-start: transparent;
     --bg-container: #232626;
     --bg-layout: #232323;
     --chat-bg: #171717;
@@ -180,7 +187,7 @@
      theme (html.theme-dark mirrors .phone.theme-dark), so any sub-pixel seam
      left by uniform scaling is the same colour as the app surface — no
      light "white border" at top / bottom / right on Android. */
-  html.theme-dark { --bg-base: #171717; }
+  html.theme-dark { --bg-base: #171717; --fade-start: transparent; }
   html.app-mode { --stage-bg: var(--bg-base); }
 
   /* ============ Device frame ============ */
@@ -1501,16 +1508,26 @@
   }
 
   .task-fade {
-    /* Figma 2831:50348 → 3101:155387 → 2839:52102: a full 48px linear ramp
-       (transparent → bg-base) whose SOLID bottom edge meets the opaque
-       bg-base tab bar (2831:50366) with gap = 0 and no colour seam — the two
-       read as one continuous white surface, with list content fading out
-       smoothly instead of being hard-cut against the bar. Matches the other
-       tab-bar fades (.pj-fade / .sch-fade / .drawer-fade). */
+    /* Figma 3375:161256 (updated 2026-11-26, replaces 3101:155388):
+       the bottom stack is now ONE 130px gradient frame — 48px padding-top
+       fade + 49px Tab bar + 33px Home Indicator — whose gradient reaches
+       solid bg-base at 36.538% (47.5px) and stays solid to the bottom.
+       Crucially the updated design's fade band is CLEAN: unlike 3101:155388
+       it no longer shows the clipped crown of the next list card, so content
+       must not bleed through above the bar. Our per-view fade is a 48px
+       overlay (the tab bar / home indicator stay separate opaque elements),
+       so we reproduce that continuous solid surface by making the lower
+       half of the band pure bg-base: upper 24px = smooth --fade-start →
+       bg-base ramp, lower 24px = solid bg-base, flush with the opaque tab
+       bar (gap = 0, no colour seam, no clipped glyph crowns).
+       --fade-start stays the exact Figma Transparency/0% token in light
+       mode; dark mode swaps to plain `transparent` (both alpha=0) because
+       some Android WebViews interpolate non-premultiplied and turn a
+       white-transparent → near-black ramp into a grey haze. */
     position: absolute;
     left: 0; right: 0; bottom: var(--tabbar-top);
     height: 48px;
-    background: linear-gradient(to bottom, rgba(255, 255, 255, 0), var(--bg-base));
+    background: linear-gradient(to bottom, var(--fade-start), var(--bg-base) 50%, var(--bg-base));
     z-index: 2;
     pointer-events: none;
   }
@@ -1626,7 +1643,7 @@
     position: absolute;
     left: 0; right: 0; bottom: 174px;
     height: 48px;
-    background: linear-gradient(to bottom, rgba(255, 255, 255, 0), var(--bg-base));
+    background: linear-gradient(to bottom, transparent, var(--bg-base));
     z-index: 2;
     pointer-events: none;
   }
@@ -1997,7 +2014,7 @@
     position: absolute;
     left: 0; right: 0; bottom: 33px;
     height: 48px;
-    background: linear-gradient(to bottom, rgba(255, 255, 255, 0), var(--bg-base));
+    background: linear-gradient(to bottom, transparent, var(--bg-base));
     z-index: 2;
     pointer-events: none;
   }
@@ -2460,13 +2477,13 @@
   .disc-row .dr-val { font-size: 16px; line-height: 22px; color: var(--black-65); }
   .disc-row .dr-r img { width: 16px; height: 16px; display: block; flex-shrink: 0; }
 
-  /* Figma 3322:158052 — same 48px uniform ramp as every other tab-bar fade
-     in this project: transparent → bg-base, solid bottom edge flush with the
-     opaque tab bar (gap = 0, no colour seam). */
+  /* Figma 3375:161256 — the updated single 130px bottom stack (48 fade +
+     49 tab bar + 33 home). Same clean solid-bottom ramp as .task-fade:
+     the fade band no longer lets the next card's clipped title show through. */
   .disc-fade {
     position: absolute; left: 0; right: 0; bottom: var(--tabbar-top);
     height: 48px;
-    background: linear-gradient(to bottom, rgba(255, 255, 255, 0), var(--bg-base));
+    background: linear-gradient(to bottom, var(--fade-start), var(--bg-base) 50%, var(--bg-base));
     z-index: 2; pointer-events: none;
   }
 
@@ -2781,11 +2798,10 @@
   .notify-list::-webkit-scrollbar { display: none; }
 
   .notify-fade {
-    /* Same Figma tab-bar fade relationship as .task-fade (48px, transparent
-       → solid bg-base), so the fade's pure-white bottom edge meets the opaque
-       tab bar with gap = 0 and no seam. */
+    /* Figma 3375:161256 — same clean solid-bottom ramp as .task-fade /
+       .disc-fade, including the theme-aware --fade-start. */
     position: absolute; left: 0; right: 0; bottom: var(--tabbar-top); height: 48px;
-    background: linear-gradient(to bottom, rgba(255, 255, 255, 0), var(--bg-base));
+    background: linear-gradient(to bottom, var(--fade-start), var(--bg-base) 50%, var(--bg-base));
     z-index: 2; pointer-events: none;
   }
 
@@ -3053,100 +3069,100 @@
   html.app-mode .home-indicator .bar { display: none; }
 </style>
 </head>
-<body>
+<body data-page-node-id="ScnzxjmDUbTi3EU8cgyT3M">
 
-<div class="phone">
+<div class="phone" data-page-node-id="X4T38koUi711gWq09wZTL0">
 
   <!-- Status bar -->
-  <div class="system-bar">
-    <div class="time">9:41</div>
-    <div class="status-icons">
-      <img class="mono cellular" src="assets/cellular.svg" alt="">
-      <img class="mono wifi" src="assets/wifi.svg" alt="">
-      <div class="battery">
-        <div class="border"></div>
-        <div class="capacity"></div>
-        <img class="mono cap" src="assets/cap.svg" alt="">
+  <div class="system-bar" data-page-node-id="gWK73TNk9o31DHzHCjVn5c">
+    <div class="time" data-page-node-id="JmFJxCfp4iIniTF2pKdr9B">9:41</div>
+    <div class="status-icons" data-page-node-id="EEA45On8xeYFrvTstvaQiw">
+      <img class="mono cellular" src="assets/cellular.svg" alt="" data-page-node-id="9LTHUHOYev8rIZJo2ksKa9">
+      <img class="mono wifi" src="assets/wifi.svg" alt="" data-page-node-id="on0JANOU7tOfzEjYTtKFH8">
+      <div class="battery" data-page-node-id="DFBymguqhzCN3FBjWtoKqA">
+        <div class="border" data-page-node-id="oFOgYsk74RrKwibzhGKiSC"></div>
+        <div class="capacity" data-page-node-id="kvt7Qwb9INC2PImgovuXGV"></div>
+        <img class="mono cap" src="assets/cap.svg" alt="" data-page-node-id="ef4IotGy3BwTdnO4abVZyp">
       </div>
     </div>
   </div>
 
   <!-- Page (slides right when drawer opens) -->
-  <div class="page">
+  <div class="page" data-page-node-id="EmOyh5NbjQf9tLr3vrZiWY">
 
   <!-- Main -->
-  <div class="main">
-    <div class="content">
+  <div class="main" data-page-node-id="cHzZhg42qYxrjJ9aGs2ZJb">
+    <div class="content" data-page-node-id="RAtSP9RvhMDEfOQRxOycg1">
 
       <!-- Header -->
-      <div class="header">
-        <div class="header-left">
-          <button class="icon-btn" id="menu-btn" aria-label="Menu">
-            <img class="mono" src="assets/icon_move_upd.svg" alt="">
+      <div class="header" data-page-node-id="W9U35gCOhGuD1cLdWiCC6E">
+        <div class="header-left" data-page-node-id="qWjqHj39CMqhqTDOyapQvr">
+          <button class="icon-btn" id="menu-btn" aria-label="Menu" data-page-node-id="0ENIx5qFhWUg1AeFBey2Tr">
+            <img class="mono" src="assets/icon_move_upd.svg" alt="" data-page-node-id="MhziccNHyJ9suzPZS1a7Yw">
           </button>
-          <div class="title-block">
-            <h1>Civia</h1>
-            <div class="cloud-row" id="home-cloud-row" role="button">
-              <span class="cloud-glyph only-cloud"><img class="mono cloud" src="assets/icon_m_cloud.svg" alt=""></span>
-              <span class="cloud-glyph only-device"><img class="mono micon" src="assets/icon_mac_sm.svg" style="width:20px;height:20px" alt=""></span>
-              <span id="home-device-label" data-i18n="home.cloud">Cloud</span>
-              <img class="mono expand" src="assets/icon_expand13.svg" alt="">
+          <div class="title-block" data-page-node-id="1ZYRLiQ1yI6yJa2JkOTTt7">
+            <h1 data-page-node-id="tZ1g2RTDzJl5BGXnjr0dm5">Civia</h1>
+            <div class="cloud-row" id="home-cloud-row" role="button" data-page-node-id="XF56Q6nQUpU2TkxN1LWDVs">
+              <span class="cloud-glyph only-cloud" data-page-node-id="gP9ZNyT4072RxtS1pe1Ofv"><img class="mono cloud" src="assets/icon_m_cloud.svg" alt="" data-page-node-id="Sevg9t6Pqg55toXPnnmDdV"></span>
+              <span class="cloud-glyph only-device" data-page-node-id="sgCtyir4DhlWS4Z0EC83CY"><img class="mono micon" src="assets/icon_mac_sm.svg" style="width:20px;height:20px" alt="" data-page-node-id="v7XNX67KJTDplwcCETOkvv"></span>
+              <span id="home-device-label" data-i18n="home.cloud" data-page-node-id="qdw2ZGwBRu4u6tsYlGSBmS">Cloud</span>
+              <img class="mono expand" src="assets/icon_expand13.svg" alt="" data-page-node-id="KOm3qHCAaEElTXSq03LBuC">
             </div>
           </div>
         </div>
-        <button class="icon-btn" id="notif-btn-home" aria-label="Notifications">
-          <img class="mono" src="assets/icon_bell_inner.svg" alt="">
+        <button class="icon-btn" id="notif-btn-home" aria-label="Notifications" data-page-node-id="tSIA3QWttmITsOCLAMYDqD">
+          <img class="mono" src="assets/icon_bell_inner.svg" alt="" data-page-node-id="TTFTT2XVtj2vGf7sKCNgDT">
         </button>
       </div>
 
       <!-- Hero -->
-      <div class="hero">
-        <div class="illus">
-          <img src="assets/mxjip_working.png" alt="Civia research mascot">
+      <div class="hero" data-page-node-id="ol6ohnXmeNUSBM8GdzzFPW">
+        <div class="illus" data-page-node-id="7vmUZy5zB1VCxvqy98PT5D">
+          <img src="assets/mxjip_working.png" alt="Civia research mascot" data-page-node-id="ruHqfsHM1KVOEUveetwxoO">
         </div>
-        <div class="hero-text">
-          <h2 data-i18n="home.heroTitle">Keep research going</h2>
-          <p data-i18n-html="home.heroSub">Please tell me<br>what you would like to do...&nbsp;</p>
+        <div class="hero-text" data-page-node-id="J7NA73F71MjYg8u3nCxt60">
+          <h2 data-i18n="home.heroTitle" data-page-node-id="Q8BHb0hj0KZU84BP90uzAx">Keep research going</h2>
+          <p data-i18n-html="home.heroSub" data-page-node-id="27Efu77BK7BgvO87uCLYqJ">Please tell me<br data-page-node-id="q0IyEOQb9mseRiNjKwtTWn">what you would like to do...&nbsp;</p>
         </div>
       </div>
 
     </div>
 
     <!-- Bottom -->
-    <div class="bottom">
+    <div class="bottom" data-page-node-id="jXNwRwXrJdsCw9MNC9rejB">
       <!-- Composer (Figma 3206:139294 输入框交互规范):
            pill default state + focused card, "+" opens the attachment sheet -->
-      <div class="composer composer-float" id="composer">
-        <button class="composer-pill" id="cmp-pill" aria-label="Message">
-          <span class="vwrap" id="cmp-voice-pill"><img class="mono" src="assets/icon_voice_message.svg?v=2" alt=""></span>
-          <div class="ph" data-i18n="composer.ph">Message or hold to talk</div>
-          <img class="mono" id="cmp-add-pill" src="assets/icon_add.svg" alt="">
+      <div class="composer composer-float" id="composer" data-page-node-id="4YhaiuruGdFM4zEAC1TZdT">
+        <button class="composer-pill" id="cmp-pill" aria-label="Message" data-page-node-id="7lv6urnhok5eyiuS9ne9gb">
+          <span class="vwrap" id="cmp-voice-pill" data-page-node-id="SlAFMSAzFEs700qyP7XR5c"><img class="mono" src="assets/icon_voice_message.svg?v=2" alt="" data-page-node-id="2G1rrx0debIw7WKziNty9y"></span>
+          <div class="ph" data-i18n="composer.ph" data-page-node-id="3qqPDUMMuBqCVGyKMVY9e8">Message or hold to talk</div>
+          <img class="mono" id="cmp-add-pill" src="assets/icon_add.svg" alt="" data-page-node-id="GfPTKVFBy1G77CAT3Rmh93">
         </button>
-        <div class="composer-card">
-          <input class="cmp-input" id="cmp-input" maxlength="2000" autocomplete="off">
+        <div class="composer-card" data-page-node-id="Qtg5tmgKuipzy2JC8jDsji">
+          <input class="cmp-input" id="cmp-input" maxlength="2000" autocomplete="off" data-page-node-id="ufRgf1GYXMRDzL7ZlnIHOD">
           <!-- 17 resource backfill chips (color-coded) + 12 attachment cards,
                two independent layers above the input line -->
-          <div class="cmp-res-row" id="cmp-res-row"></div>
-          <div class="cmp-att-row" id="cmp-att-row"></div>
-          <div class="cmp-line" id="cmp-line">
-            <span class="cmp-cursor"></span>
-            <div class="cmp-text"><span class="ph" data-i18n="composer.ph.focus">Task Civia</span><span class="val"></span></div>
+          <div class="cmp-res-row" id="cmp-res-row" data-page-node-id="8OcH4xRDq3aghiHSdAPWRR"></div>
+          <div class="cmp-att-row" id="cmp-att-row" data-page-node-id="xSdBJ6UcrVYqJyVDUvuuGB"></div>
+          <div class="cmp-line" id="cmp-line" data-page-node-id="OgSLGBddNf5z3dRlIbJnya">
+            <span class="cmp-cursor" data-page-node-id="bCL1ysVkOky5s7StYeesJf"></span>
+            <div class="cmp-text" data-page-node-id="kzbywLO0286vYKEMycf6e7"><span class="ph" data-i18n="composer.ph.focus" data-page-node-id="6xQc7dVvPKhEJOSkSBb4a7">Task Civia</span><span class="val" data-page-node-id="Fmhj7ECJ5eVNlV3IySvHbf"></span></div>
           </div>
-          <div class="cmp-tools">
-            <div class="l">
-              <span class="vwrap" id="cmp-voice-card"><img class="mono" src="assets/icon_voice_message.svg?v=2" alt=""></span>
-              <div class="cmp-model">
-                <img class="mono" src="assets/icon_permissions.svg" alt="">
-                <span data-i18n="composer.model">Default</span>
-                <img class="mono exp" src="assets/icon_expand1.svg" alt="">
+          <div class="cmp-tools" data-page-node-id="XRTUIOozw1YnamyClFQOH3">
+            <div class="l" data-page-node-id="3A9fxQh3NFrlFW3SrHkf2a">
+              <span class="vwrap" id="cmp-voice-card" data-page-node-id="zrPU7d9b2dxptKA88qEohR"><img class="mono" src="assets/icon_voice_message.svg?v=2" alt="" data-page-node-id="XA5HlvooIlFmZNKzBdVQKk"></span>
+              <div class="cmp-model" data-page-node-id="1XTJhke8HmmnzgjT60HDtw">
+                <img class="mono" src="assets/icon_permissions.svg" alt="" data-page-node-id="LnlfWKyqSYTAAbURFljArj">
+                <span data-i18n="composer.model" data-page-node-id="kZFk5gRbn6iskv2CVQ0euX">Default</span>
+                <img class="mono exp" src="assets/icon_expand1.svg" alt="" data-page-node-id="el065iRBfi3bYHe6PF4K9R">
               </div>
             </div>
-            <div class="r">
-              <img class="mono add" id="cmp-add-card" src="assets/icon_add.svg" alt="">
-              <button class="cmp-send" id="cmp-send" disabled aria-label="Send">
-                <img id="cmp-send-ic" src="assets/icon_send_off.svg" alt="">
-                <img class="ic-dk send" src="assets/icon_send_dark.svg" alt="">
-                <img class="ic-dk stop" src="assets/icon_stop_dark.svg" alt="">
+            <div class="r" data-page-node-id="msqW6e70HQtQdxIR9oT9Lc">
+              <img class="mono add" id="cmp-add-card" src="assets/icon_add.svg" alt="" data-page-node-id="5Tw2s1rGV3Av4Y5jZdBDGX">
+              <button class="cmp-send" id="cmp-send" disabled aria-label="Send" data-page-node-id="YBFoylQJFLEbNvrnnf0QKM">
+                <img id="cmp-send-ic" src="assets/icon_send_off.svg" alt="" data-page-node-id="Exxtr98wlqYh7zAfA4AwGW">
+                <img class="ic-dk send" src="assets/icon_send_dark.svg" alt="" data-page-node-id="UC52aovl0D4Uq2f9sXVArJ">
+                <img class="ic-dk stop" src="assets/icon_stop_dark.svg" alt="" data-page-node-id="czUmePnrylHEvYT6ra9DUX">
               </button>
             </div>
           </div>
@@ -3156,322 +3172,322 @@
   </div><!-- /main -->
 
   <!-- ============ Task view ============ -->
-  <div class="task-view">
+  <div class="task-view" data-page-node-id="fDEA1F00AyDaDcK9Urx3MD">
 
     <!-- Header -->
-    <div class="task-header">
-      <button class="icon-btn" id="task-menu-btn" aria-label="Menu">
-        <span class="only-cloud"><img class="mono cloud" src="assets/icon_cloud_header.svg" alt=""></span>
-        <span class="only-device"><img class="mono micon" src="assets/icon_mac.svg" style="width:24px;height:24px" alt=""></span>
-        <img class="mono expand" src="assets/icon_expand7_sm.svg" alt="">
+    <div class="task-header" data-page-node-id="32e0mRhDZhD8iv4C4BKs17">
+      <button class="icon-btn" id="task-menu-btn" aria-label="Menu" data-page-node-id="5g71zB4dz837vn7zjSqMqU">
+        <span class="only-cloud" data-page-node-id="DFf6gI8hlEfVjovmrrUCPk"><img class="mono cloud" src="assets/icon_cloud_header.svg" alt="" data-page-node-id="KaHji7wgabXZOyWEAGChjA"></span>
+        <span class="only-device" data-page-node-id="uEK2ItY55sGlvHoUp07IcE"><img class="mono micon" src="assets/icon_mac.svg" style="width:24px;height:24px" alt="" data-page-node-id="iqoYKzd2N849T0bCS8b7kZ"></span>
+        <img class="mono expand" src="assets/icon_expand7_sm.svg" alt="" data-page-node-id="p6uDe0P3G6H8aWsJUPbh3f">
       </button>
-      <div class="t-title" data-i18n="task.title">Task</div>
+      <div class="t-title" data-i18n="task.title" data-page-node-id="KZ1mlJIxrp7SqDvt7OuWGW">Task</div>
     </div>
 
     <!-- Filter tabs -->
-    <div class="filter-tabs" id="filter-tabs">
-      <button class="filter-tab active" data-filter="all" data-i18n="filter.all">All</button>
-      <button class="filter-tab" data-filter="inprogress" data-i18n="filter.inProgress">In Progress</button>
-      <button class="filter-tab" data-filter="completed" data-i18n="filter.completed">Completed</button>
+    <div class="filter-tabs" id="filter-tabs" data-page-node-id="xiIYqHNDrmNGgPFSR7GZ9f">
+      <button class="filter-tab active" data-filter="all" data-i18n="filter.all" data-page-node-id="EnKoHIPDM6EKLPqJokX1PV">All</button>
+      <button class="filter-tab" data-filter="inprogress" data-i18n="filter.inProgress" data-page-node-id="t6C9AoGdO1EKnd0U9yM93x">In Progress</button>
+      <button class="filter-tab" data-filter="completed" data-i18n="filter.completed" data-page-node-id="kAYAhgpbpLp9ACnt1QDkbF">Completed</button>
     </div>
 
     <!-- Task cards -->
-    <div class="task-scroll">
-      <div class="task-list">
+    <div class="task-scroll" data-page-node-id="DkFRFap9r5zboD6AZThVDG">
+      <div class="task-list" data-page-node-id="jpnmfwNDuqBOW19P4lf1h0">
 
-        <div class="task-card bg-progress">
-          <div class="row1">
-            <span class="t-name">BRCA1 Variant Annotation</span>
-            <span class="sicon i-load"></span>
+        <div class="task-card bg-progress" data-page-node-id="Mixbqh8lUIJ23ND3gdifxl">
+          <div class="row1" data-page-node-id="tsLXkRR7HmoQlltdeBN1yp">
+            <span class="t-name" data-page-node-id="SkRff0LZoPyED2KLenYklX">BRCA1 Variant Annotation</span>
+            <span class="sicon i-load" data-page-node-id="4btHfLYpqD5EkncMqNpNJJ"></span>
           </div>
-          <div class="row2">
-            <span class="proj" data-i18n="task.self">Task</span>
-            <span class="time">16:55</span>
+          <div class="row2" data-page-node-id="TsGCKxo19qSagP7jNoKnJf">
+            <span class="proj" data-i18n="task.self" data-page-node-id="HeSBm83X0j5Ec5VBf2xJJi">Task</span>
+            <span class="time" data-page-node-id="SuSV1GaV0Zo562lQvTYyoK">16:55</span>
           </div>
         </div>
 
-        <div class="task-card bg-warn">
-          <div class="row1">
-            <span class="t-name">Bulk RNA-seq Preprocessing</span>
-            <span class="sicon i-warn"></span>
+        <div class="task-card bg-warn" data-page-node-id="4yqj4l0sh4t08DBgPmk8LE">
+          <div class="row1" data-page-node-id="Na7nBRZXRdPP1FoeWkafhX">
+            <span class="t-name" data-page-node-id="wIxyqeEi1zkg1jVpeaXc6z">Bulk RNA-seq Preprocessing</span>
+            <span class="sicon i-warn" data-page-node-id="rhTdlF2lVrfJU0eQUUlKBq"></span>
           </div>
-          <div class="row2">
-            <span class="proj">Genomics&nbsp;</span>
-            <span class="time" data-i18n="time.thisWeek">This Week</span>
-          </div>
-        </div>
-
-        <div class="task-card bg-layout">
-          <div class="row1"><span class="t-name">HER2 Domain II&nbsp;</span></div>
-          <div class="row2">
-            <span class="proj">Genomics&nbsp;</span>
-            <span class="time" data-i18n="time.thisWeek">This Week</span>
+          <div class="row2" data-page-node-id="IolFC4HjpjbbJJBOjyhgoz">
+            <span class="proj" data-page-node-id="SXjKlvSFBmvcTLPHkwLIHZ">Genomics&nbsp;</span>
+            <span class="time" data-i18n="time.thisWeek" data-page-node-id="liJrJcYDQQ366KoeGFXD1x">This Week</span>
           </div>
         </div>
 
-        <div class="task-card bg-error">
-          <div class="row1">
-            <span class="t-name">Protein Structure Visualization&nbsp;</span>
-            <span class="sicon i-err"></span>
-          </div>
-          <div class="row2">
-            <span class="proj" data-i18n="task.self">Task</span>
-            <span class="time" data-i18n="time.thisMonth">This Month</span>
+        <div class="task-card bg-layout" data-page-node-id="B3ELz9xGphz4rWlTV6pEyx">
+          <div class="row1" data-page-node-id="FQiKbRCY7E5bVibFOIHCVv"><span class="t-name" data-page-node-id="AxN8foBVSWo91FVFcJFf59">HER2 Domain II&nbsp;</span></div>
+          <div class="row2" data-page-node-id="fldxRjpuIJQAaCQBJCjI4Y">
+            <span class="proj" data-page-node-id="qVBMNqqhGNoFkSSUg8q9xQ">Genomics&nbsp;</span>
+            <span class="time" data-i18n="time.thisWeek" data-page-node-id="BfrUjAaTOoN6f1VSmsJ9S2">This Week</span>
           </div>
         </div>
 
-        <div class="task-card bg-layout">
-          <div class="row1"><span class="t-name">BMI-colorectal cancer MR ana...</span></div>
-          <div class="row2">
-            <span class="proj">Proteomics</span>
-            <span class="time" data-i18n="time.thisMonth">This Month</span>
+        <div class="task-card bg-error" data-page-node-id="hVZnrIplIvaPlxjBNXUrgj">
+          <div class="row1" data-page-node-id="QjpEqMnHSOIC4KP6U6hw7d">
+            <span class="t-name" data-page-node-id="MWemAPHbvbOevXcbzkHRve">Protein Structure Visualization&nbsp;</span>
+            <span class="sicon i-err" data-page-node-id="X11rd0m526iT501zbzNWEe"></span>
+          </div>
+          <div class="row2" data-page-node-id="hfAvY6imaNye4MkwqpPUPE">
+            <span class="proj" data-i18n="task.self" data-page-node-id="R9pKIUng56cuOm348GcXjz">Task</span>
+            <span class="time" data-i18n="time.thisMonth" data-page-node-id="DFkbRd3ojwFpZ0oTNHERDl">This Month</span>
           </div>
         </div>
 
-        <div class="task-card bg-layout">
-          <div class="row1"><span class="t-name">Colonoscopy screening guidelines</span></div>
-          <div class="row2">
-            <span class="proj">Genomics&nbsp;</span>
-            <span class="time" data-i18n="time.earlier">Earlier</span>
+        <div class="task-card bg-layout" data-page-node-id="oGcoGpHUUQtcJJvcEbtLRx">
+          <div class="row1" data-page-node-id="oMikCEOpulQBWdRvXrBEzX"><span class="t-name" data-page-node-id="0JupEIEr5KGNze81Zcos6d">BMI-colorectal cancer MR ana...</span></div>
+          <div class="row2" data-page-node-id="khXTsYUYYiKCW3Q0nIZ8dB">
+            <span class="proj" data-page-node-id="UyWMi10alaUq5aXEUu50Fz">Proteomics</span>
+            <span class="time" data-i18n="time.thisMonth" data-page-node-id="Vwqh5jd0jjSea71l0SgbuK">This Month</span>
           </div>
         </div>
 
-        <div class="task-card bg-progress">
-          <div class="row1">
-            <span class="t-name">CRISPR Off-target Analysis</span>
-            <span class="sicon i-load"></span>
-          </div>
-          <div class="row2">
-            <span class="proj">Genomics&nbsp;</span>
-            <span class="time" data-i18n="time.justNow">Just now</span>
+        <div class="task-card bg-layout" data-page-node-id="9qoF350w72EWcuyT5TMvPb">
+          <div class="row1" data-page-node-id="f8gi1IT344gF7IIUbv2r12"><span class="t-name" data-page-node-id="eweiv6ged14lMZAL6Osi2e">Colonoscopy screening guidelines</span></div>
+          <div class="row2" data-page-node-id="RFYClJ4M6tO7XC6CPz3B4Z">
+            <span class="proj" data-page-node-id="k19jZE6Hgfjscd6ksCDkLZ">Genomics&nbsp;</span>
+            <span class="time" data-i18n="time.earlier" data-page-node-id="33NPkjlHlRwn73fpbKo0XG">Earlier</span>
           </div>
         </div>
 
-        <div class="task-card bg-layout">
-          <div class="row1"><span class="t-name">Single-cell RNA-seq Clustering</span></div>
-          <div class="row2">
-            <span class="proj">Genomics&nbsp;</span>
-            <span class="time" data-i18n="time.12m">12m ago</span>
+        <div class="task-card bg-progress" data-page-node-id="XJo9omW52E2FCCAgcsqM26">
+          <div class="row1" data-page-node-id="OYeo2lrVBvTHTv4gpkZoSK">
+            <span class="t-name" data-page-node-id="uZUvp10PSqNNq5QBXnw0My">CRISPR Off-target Analysis</span>
+            <span class="sicon i-load" data-page-node-id="vmAmnHRUf0UYBWhERWb54i"></span>
+          </div>
+          <div class="row2" data-page-node-id="VuwF2H58op65x8ae7wVXGF">
+            <span class="proj" data-page-node-id="STFRUbvznW2j68bgdaYuBr">Genomics&nbsp;</span>
+            <span class="time" data-i18n="time.justNow" data-page-node-id="386276hbb37EE8uVpv1fGq">Just now</span>
           </div>
         </div>
 
-        <div class="task-card bg-progress">
-          <div class="row1">
-            <span class="t-name">AlphaFold Structure Prediction</span>
-            <span class="sicon i-load"></span>
-          </div>
-          <div class="row2">
-            <span class="proj">Proteomics</span>
-            <span class="time" data-i18n="time.24m">24m ago</span>
+        <div class="task-card bg-layout" data-page-node-id="qdBkDRhpXYnx9y9PHfqdZR">
+          <div class="row1" data-page-node-id="jBHO5GD5HleQEtFRwM0t2x"><span class="t-name" data-page-node-id="geUny8qj2H4ACQ19wI4RJC">Single-cell RNA-seq Clustering</span></div>
+          <div class="row2" data-page-node-id="AzaqCl0QhlmsT9ifbEDb7a">
+            <span class="proj" data-page-node-id="79T4u0yjTvmaNghmgirJq2">Genomics&nbsp;</span>
+            <span class="time" data-i18n="time.12m" data-page-node-id="uS8hwXqwC2Y2Gf4TPKrm6V">12m ago</span>
           </div>
         </div>
 
-        <div class="task-card bg-warn">
-          <div class="row1">
-            <span class="t-name">Gut Microbiome Diversity Report</span>
-            <span class="sicon i-warn"></span>
+        <div class="task-card bg-progress" data-page-node-id="br0zGHduIzuJhjx5A9ULQZ">
+          <div class="row1" data-page-node-id="G89qyc9qM1fem64EiMlGr3">
+            <span class="t-name" data-page-node-id="zBDqS7CE1634YBv2IMe715">AlphaFold Structure Prediction</span>
+            <span class="sicon i-load" data-page-node-id="Hsj8HgjOnUH2Euk2IiEWiX"></span>
           </div>
-          <div class="row2">
-            <span class="proj">Proteomics</span>
-            <span class="time" data-i18n="time.1d">1d ago</span>
+          <div class="row2" data-page-node-id="NPvkuEMPZp6VfhDrgUCPET">
+            <span class="proj" data-page-node-id="8dFDDWkppUGN120BdxLiYC">Proteomics</span>
+            <span class="time" data-i18n="time.24m" data-page-node-id="QwhvN9wYDqrEFVHIeLsPxq">24m ago</span>
           </div>
         </div>
 
-        <div class="task-card bg-layout">
-          <div class="row1"><span class="t-name">qPCR Primer Validation</span></div>
-          <div class="row2">
-            <span class="proj" data-i18n="task.self">Task</span>
-            <span class="time" data-i18n="time.1d">1d ago</span>
+        <div class="task-card bg-warn" data-page-node-id="J8pq52soiul4TZyU2UEM8M">
+          <div class="row1" data-page-node-id="T6BHlEN4zlApYzUPGLNLAb">
+            <span class="t-name" data-page-node-id="usiHNBxEh50DtSqz28e13y">Gut Microbiome Diversity Report</span>
+            <span class="sicon i-warn" data-page-node-id="Hzw3FZTLSs72Jx0eYycLKe"></span>
+          </div>
+          <div class="row2" data-page-node-id="73P7jgw8HttHyDWzRo5XdW">
+            <span class="proj" data-page-node-id="BMCSiWszmR9cXYHjXfunGk">Proteomics</span>
+            <span class="time" data-i18n="time.1d" data-page-node-id="FZViy85bHIifntu68pwaFE">1d ago</span>
+          </div>
+        </div>
+
+        <div class="task-card bg-layout" data-page-node-id="oGH0MTzzWm1oHPdDdXRBPe">
+          <div class="row1" data-page-node-id="HflEP1ixpvhrCvlRfwwIs0"><span class="t-name" data-page-node-id="XOBU4jHSHtNyVnEhkBPloJ">qPCR Primer Validation</span></div>
+          <div class="row2" data-page-node-id="1o0ouhDJ94HT1ofdYXDWFc">
+            <span class="proj" data-i18n="task.self" data-page-node-id="UGrIrj9VD4ilcikZem6gjk">Task</span>
+            <span class="time" data-i18n="time.1d" data-page-node-id="z0ADk7OVQmrwRJih7sUo09">1d ago</span>
           </div>
         </div>
 
       </div>
 
       <!-- Empty state -->
-      <div class="task-empty">
-        <img src="assets/mxj_no_task.png" alt="">
-        <div class="txt" data-i18n="task.empty">No task</div>
+      <div class="task-empty" data-page-node-id="nFkPjdmVFkfDywUMFBAq3J">
+        <img src="assets/mxj_no_task.png" alt="" data-page-node-id="MNbCdTchBpFjYhMNDQyoCn">
+        <div class="txt" data-i18n="task.empty" data-page-node-id="xnCkImjcUF34tvpxAwTS9J">No task</div>
       </div>
 
       <!-- No network state (Figma 3124:165273) -->
-      <div class="net-empty">
-        <img src="assets/mxj_no_internet.png" alt="">
-        <div class="tt" data-i18n="net.title">No Network Available</div>
-        <div class="sub" data-i18n="net.sub">Check your network permissions and current network status</div>
-        <button class="refresh" id="net-refresh" data-i18n="net.refresh">Refresh</button>
+      <div class="net-empty" data-page-node-id="d0WNFawBBHJuxqw7FP5Dmh">
+        <img src="assets/mxj_no_internet.png" alt="" data-page-node-id="g8Irb727qfbkjyBTswEoBJ">
+        <div class="tt" data-i18n="net.title" data-page-node-id="Xtt0OpDIWAv9feMIVqvdJq">No Network Available</div>
+        <div class="sub" data-i18n="net.sub" data-page-node-id="b4RK4i3uxnbcMbLoFuXuQw">Check your network permissions and current network status</div>
+        <button class="refresh" id="net-refresh" data-i18n="net.refresh" data-page-node-id="s5uwOGz7Kl3HPDqMaD3yRp">Refresh</button>
       </div>
     </div>
 
-    <div class="task-fade"></div>
+    <div class="task-fade" data-page-node-id="kPwcCJeWCKeoDr2vk9vujV"></div>
 
     <!-- Long-press action menu on task-page cards (Figma 3199:138579):
          Rename / Pin(Unpin) / Remove / Move to Project / Delete. The Remove
          item is hidden for plain tasks (bottom-left label "Task") — only
          cards that belong to a project can be removed from it. -->
-    <div class="sb-lpmenu" id="tv-lpmenu">
-      <button class="m-item" id="tlp-rename-btn">
-        <img class="mono" src="assets/icon_rename.svg" alt="">
-        <span class="lbl" data-i18n="pj.rename">Rename</span>
+    <div class="sb-lpmenu" id="tv-lpmenu" data-page-node-id="u99bZ7NcSYvh1Mu2N4cNSG">
+      <button class="m-item" id="tlp-rename-btn" data-page-node-id="U0I0ONE10cDHDbhuJak1Wu">
+        <img class="mono" src="assets/icon_rename.svg" alt="" data-page-node-id="GzlYiz85dZ8xmpIUt2teyK">
+        <span class="lbl" data-i18n="pj.rename" data-page-node-id="4lS6jE1jfbvH2BYzA8xeuL">Rename</span>
       </button>
-      <button class="m-item" id="tlp-pin-btn">
-        <img class="mono" id="tlp-pin-icon" src="assets/icon_pin.svg" alt="">
-        <span class="lbl" id="tlp-pin-lbl" data-i18n="pj.pin">Pin</span>
+      <button class="m-item" id="tlp-pin-btn" data-page-node-id="6wlLz7qydV73mvWDsS38nr">
+        <img class="mono" id="tlp-pin-icon" src="assets/icon_pin.svg" alt="" data-page-node-id="Q8sgSWbU0DLpidel8V3pnN">
+        <span class="lbl" id="tlp-pin-lbl" data-i18n="pj.pin" data-page-node-id="ERI1MdnBzBjjPLQARJybT8">Pin</span>
       </button>
-      <button class="m-item" id="tlp-remove-btn">
-        <img class="mono" src="assets/icon_folder_remove.svg" alt="">
-        <span class="lbl" data-i18n="lp.remove">Remove</span>
+      <button class="m-item" id="tlp-remove-btn" data-page-node-id="GyYHdrJrtsIJP4i1yLxxOk">
+        <img class="mono" src="assets/icon_folder_remove.svg" alt="" data-page-node-id="Yqq25CfmEsIx3mtbKtq9OQ">
+        <span class="lbl" data-i18n="lp.remove" data-page-node-id="3PcJukyvQHb5Fi5OuDqcoX">Remove</span>
       </button>
-      <button class="m-item" id="tlp-move-btn">
-        <img class="mono" src="assets/icon_folder_move.svg" alt="">
-        <span class="lbl" data-i18n="lp.move">Move to Project</span>
+      <button class="m-item" id="tlp-move-btn" data-page-node-id="YuR4jPPFimSwGllSkhJRXF">
+        <img class="mono" src="assets/icon_folder_move.svg" alt="" data-page-node-id="qu5P7jlCf4sgPwWb0AewdU">
+        <span class="lbl" data-i18n="lp.move" data-page-node-id="t0hrceoNzKb7Fu7r7Kanhw">Move to Project</span>
       </button>
-      <button class="m-item danger" id="tlp-delete-btn">
-        <img src="assets/icon_delete.svg" alt="">
-        <span class="lbl" data-i18n="pj.delete">Delete</span>
+      <button class="m-item danger" id="tlp-delete-btn" data-page-node-id="hv8pKTxsYGwaIDETIiLDdq">
+        <img src="assets/icon_delete.svg" alt="" data-page-node-id="4H6vvjSRHZcmGb51WGuRTY">
+        <span class="lbl" data-i18n="pj.delete" data-page-node-id="DKYugUBRvoDJMekIoSNXXS">Delete</span>
       </button>
     </div>
 
   </div>
 
   <!-- ============ Project group view (Figma 3046:162644; entry: drawer 项目 rows) ============ -->
-  <div class="project-view">
+  <div class="project-view" data-page-node-id="0ynsPt8Ew1K8Vz20zziQhi">
 
     <!-- Header: menu pill + Civia/Cloud title + search·more pill -->
-    <div class="pj-header">
-      <div class="header-left">
-        <button class="icon-btn" id="pj-menu-btn" aria-label="Menu">
-          <img class="mono" src="assets/icon_move_upd.svg" alt="">
+    <div class="pj-header" data-page-node-id="WDcM32fhrvwEbT17SRFO8V">
+      <div class="header-left" data-page-node-id="GQxpj37CsIL3jhgY2eGSwN">
+        <button class="icon-btn" id="pj-menu-btn" aria-label="Menu" data-page-node-id="1ksePCuDXVyFKkVhdASZqr">
+          <img class="mono" src="assets/icon_move_upd.svg" alt="" data-page-node-id="JDO8LYX4G6VRQtzXj9iyuB">
         </button>
-        <div class="title-block">
-          <h1>Civia</h1>
-          <div class="cloud-row" id="pj-cloud-row" role="button">
-            <span class="cloud-glyph only-cloud"><img class="mono cloud" src="assets/icon_m_cloud.svg" alt=""></span>
-            <span class="cloud-glyph only-device"><img class="mono micon" src="assets/icon_mac_sm.svg" style="width:20px;height:20px" alt=""></span>
-            <span id="pj-device-label" data-i18n="home.cloud">Cloud</span>
-            <img class="mono expand" src="assets/icon_expand13.svg" alt="">
+        <div class="title-block" data-page-node-id="wSc39mReOoujCeXIRXErl3">
+          <h1 data-page-node-id="pDKDhs0zCssyD6mXIP24qU">Civia</h1>
+          <div class="cloud-row" id="pj-cloud-row" role="button" data-page-node-id="LNtVp9oB9WTt54dglS4YCL">
+            <span class="cloud-glyph only-cloud" data-page-node-id="fILzhsZ14wGJAm5a3Ozhuj"><img class="mono cloud" src="assets/icon_m_cloud.svg" alt="" data-page-node-id="01X008T3tjHz1W4APZ6lpI"></span>
+            <span class="cloud-glyph only-device" data-page-node-id="yJhQmec7K8o7xz9M2l3gec"><img class="mono micon" src="assets/icon_mac_sm.svg" style="width:20px;height:20px" alt="" data-page-node-id="Kbkc4FPpOehHDnj0WWbzGK"></span>
+            <span id="pj-device-label" data-i18n="home.cloud" data-page-node-id="TptAacMLAPuDgEBSCn8DGR">Cloud</span>
+            <img class="mono expand" src="assets/icon_expand13.svg" alt="" data-page-node-id="d6qP55QZoNLvb3CDpRCBFB">
           </div>
         </div>
       </div>
-      <div class="icon-btn pj-tools">
-        <button class="pj-tool" id="pj-search-btn" aria-label="Search">
-          <img class="mono" src="assets/icon_search.svg" alt="">
+      <div class="icon-btn pj-tools" data-page-node-id="AI4rqac56iPQoJW0rZvOTQ">
+        <button class="pj-tool" id="pj-search-btn" aria-label="Search" data-page-node-id="Hoaq4ELK6AwQvwPHaIvUDE">
+          <img class="mono" src="assets/icon_search.svg" alt="" data-page-node-id="LBaB1eEX4sdAmLVZm5AaIm">
         </button>
-        <button class="pj-tool" id="pj-more-btn" aria-label="More">
-          <img class="mono" src="assets/icon_more.svg" alt="">
+        <button class="pj-tool" id="pj-more-btn" aria-label="More" data-page-node-id="hIVcbXB7tSFwVvPSav9wco">
+          <img class="mono" src="assets/icon_more.svg" alt="" data-page-node-id="Uv9823W8PdM88qqU6rqnUv">
         </button>
       </div>
     </div>
 
     <!-- More dropdown: Rename / Pin / Delete (Figma 3120:158882) -->
-    <div class="pj-menu" id="pj-menu">
-      <button class="m-item" id="pj-rename-btn">
-        <img class="mono" src="assets/icon_rename.svg" alt="">
-        <span class="lbl" data-i18n="pj.rename">Rename</span>
+    <div class="pj-menu" id="pj-menu" data-page-node-id="fI8qGUErt6ZAdEnevxnSEc">
+      <button class="m-item" id="pj-rename-btn" data-page-node-id="JxAF3iMmoBoFMvDq8hFVzs">
+        <img class="mono" src="assets/icon_rename.svg" alt="" data-page-node-id="98NZwVDS8sBvQ7mrLi8cbq">
+        <span class="lbl" data-i18n="pj.rename" data-page-node-id="PgQ5lfJXFKrXODEniBGa7o">Rename</span>
       </button>
-      <button class="m-item" id="pj-pin-btn">
-        <img class="mono" src="assets/icon_pin.svg" alt="">
-        <span class="lbl" data-i18n="pj.pin">Pin</span>
+      <button class="m-item" id="pj-pin-btn" data-page-node-id="FbQe7IC8lMOCIEyjHFTIMt">
+        <img class="mono" src="assets/icon_pin.svg" alt="" data-page-node-id="ZRpyTKaDsTAB6ew6cA6dMN">
+        <span class="lbl" data-i18n="pj.pin" data-page-node-id="xBy8EKJ3AhMKJ3SLPKlQJb">Pin</span>
       </button>
-      <button class="m-item danger" id="pj-delete-btn">
-        <img src="assets/icon_delete.svg" alt="">
-        <span class="lbl" data-i18n="pj.delete">Delete</span>
+      <button class="m-item danger" id="pj-delete-btn" data-page-node-id="L54J94v5Zdg3TZJNMiuxYD">
+        <img src="assets/icon_delete.svg" alt="" data-page-node-id="pZeFWfePkF7N7emAhq4DVr">
+        <span class="lbl" data-i18n="pj.delete" data-page-node-id="jMgLDdJo8HCtxxDSYvlLU4">Delete</span>
       </button>
     </div>
 
     <!-- Project title block -->
-    <div class="pj-title">
-      <div class="name" id="pj-name">Proteomics</div>
-      <div class="sub" id="pj-sub" data-count="8">Project Tasks · 8</div>
+    <div class="pj-title" data-page-node-id="CFaqJEH3ohke9mutKtMwTI">
+      <div class="name" id="pj-name" data-page-node-id="udkBAqExKV9AyhAIra1Lrq">Proteomics</div>
+      <div class="sub" id="pj-sub" data-count="8" data-page-node-id="bIJqTXYXiw4UWsUEkBE7Qy">Project Tasks · 8</div>
     </div>
 
     <!-- Task cards -->
-    <div class="pj-scroll">
-      <div class="pj-list" id="pj-list">
+    <div class="pj-scroll" data-page-node-id="9XWV3kdlN5OrXC0ZdMwZaD">
+      <div class="pj-list" id="pj-list" data-page-node-id="FUwOHtCI4AjMNc8N2i5BSJ">
 
-        <div class="task-card bg-progress">
-          <div class="row1">
-            <span class="t-name">BRCA1 Variant Annotation</span>
-            <span class="sicon i-load"></span>
+        <div class="task-card bg-progress" data-page-node-id="OhwYqlA1QTc6HHt8B0o0WK">
+          <div class="row1" data-page-node-id="DDXPgwK0rnnhpW5UE4s9kP">
+            <span class="t-name" data-page-node-id="ezzFfjDYUJEknT1TF3zFr3">BRCA1 Variant Annotation</span>
+            <span class="sicon i-load" data-page-node-id="0ZFNqIfigHV9BgjxRavHEt"></span>
           </div>
-          <div class="row2">
-            <span class="sub">36 variants screened, 3 flagged</span>
-            <span class="time">16:55</span>
+          <div class="row2" data-page-node-id="BFXuGWoIvpKw2voW2AHtEI">
+            <span class="sub" data-page-node-id="KOeWta8KNAwEzU1JIUeunl">36 variants screened, 3 flagged</span>
+            <span class="time" data-page-node-id="6SJ0eWgOPCYgpD2v5la6xC">16:55</span>
           </div>
         </div>
 
-        <div class="task-card bg-warn">
-          <div class="row1">
-            <span class="t-name">Bulk RNA-seq Preprocessing</span>
-            <span class="sicon i-warn"></span>
+        <div class="task-card bg-warn" data-page-node-id="bTsSB0szr6Xe4VGMuniwYU">
+          <div class="row1" data-page-node-id="PKu9Rte1C0ll9qdAGtm443">
+            <span class="t-name" data-page-node-id="5BAwue2pzfW5MGqrdy4fKQ">Bulk RNA-seq Preprocessing</span>
+            <span class="sicon i-warn" data-page-node-id="TkCfOQRklsLaiO70vHSIAJ"></span>
           </div>
-          <div class="row2">
-            <span class="sub">2 of 12 samples failed QC</span>
-            <span class="time" data-i18n="time.thisWeek">This Week</span>
-          </div>
-        </div>
-
-        <div class="task-card bg-layout">
-          <div class="row1"><span class="t-name">HER2 Domain II&nbsp;</span></div>
-          <div class="row2">
-            <span class="sub">BRCT domain boundary mapped</span>
-            <span class="time" data-i18n="time.thisWeek">This Week</span>
+          <div class="row2" data-page-node-id="R8ERpYHyybOW6QSATa7mkz">
+            <span class="sub" data-page-node-id="dXEen89hMt9oCOPlmVHidg">2 of 12 samples failed QC</span>
+            <span class="time" data-i18n="time.thisWeek" data-page-node-id="fwNuncv4zFX3WaYvAHPP3H">This Week</span>
           </div>
         </div>
 
-        <div class="task-card bg-error">
-          <div class="row1">
-            <span class="t-name">Protein Structure Visualization&nbsp;</span>
-            <span class="sicon i-err"></span>
-          </div>
-          <div class="row2">
-            <span class="sub">5 AlphaFold models rendered</span>
-            <span class="time" data-i18n="time.thisMonth">This Month</span>
+        <div class="task-card bg-layout" data-page-node-id="EyJncE929AMGNT7EHwHDXW">
+          <div class="row1" data-page-node-id="Zu6edTnjabxBt79S5HFie5"><span class="t-name" data-page-node-id="ChwdaTOnDovWyEEYdCJKpc">HER2 Domain II&nbsp;</span></div>
+          <div class="row2" data-page-node-id="f8Fz7BHYuOTJMJm92zAtSh">
+            <span class="sub" data-page-node-id="7ZEEIn3sPeLbTxyvdpOME9">BRCT domain boundary mapped</span>
+            <span class="time" data-i18n="time.thisWeek" data-page-node-id="nhbqOTjMwDRb2q3nqZNeFm">This Week</span>
           </div>
         </div>
 
-        <div class="task-card bg-layout">
-          <div class="row1"><span class="t-name">BMI-colorectal cancer MR ana...</span></div>
-          <div class="row2">
-            <span class="sub">MR estimates exported to CSV</span>
-            <span class="time" data-i18n="time.thisMonth">This Month</span>
+        <div class="task-card bg-error" data-page-node-id="K2ELdFvo6iWG5E8ZUnyoFF">
+          <div class="row1" data-page-node-id="M3fOi8BdZBgbssCC7iHWOA">
+            <span class="t-name" data-page-node-id="XrlJYIcnGFeGclXSPwxHVW">Protein Structure Visualization&nbsp;</span>
+            <span class="sicon i-err" data-page-node-id="tXFkpqN63E09iSSif17a6u"></span>
+          </div>
+          <div class="row2" data-page-node-id="hh7iCu6lvoqZuZlx6ifQLL">
+            <span class="sub" data-page-node-id="DtAK79MDg87H7AtzNlafzc">5 AlphaFold models rendered</span>
+            <span class="time" data-i18n="time.thisMonth" data-page-node-id="crkysIojhvWHx7piNq3l1c">This Month</span>
           </div>
         </div>
 
-        <div class="task-card bg-layout">
-          <div class="row1"><span class="t-name">Colonoscopy screening guidelines</span></div>
-          <div class="row2">
-            <span class="sub">Guideline summary drafted</span>
-            <span class="time" data-i18n="time.earlier">Earlier</span>
+        <div class="task-card bg-layout" data-page-node-id="BYiKGLrxgQE2dCB0WqBKFp">
+          <div class="row1" data-page-node-id="eftcB0wLHDa7P1KqhvzPtm"><span class="t-name" data-page-node-id="hVrkGY0GBO1KLtdU3mYa0x">BMI-colorectal cancer MR ana...</span></div>
+          <div class="row2" data-page-node-id="QTWv4CsHHfqJRrMViGDSdP">
+            <span class="sub" data-page-node-id="XgSucZV2mPc1yAGg9T36yf">MR estimates exported to CSV</span>
+            <span class="time" data-i18n="time.thisMonth" data-page-node-id="zL2sV28ngHRLkk309un57S">This Month</span>
           </div>
         </div>
 
-        <div class="task-card bg-layout">
-          <div class="row1"><span class="t-name">Colonoscopy screening guidelines</span></div>
-          <div class="row2">
-            <span class="sub">Screening evidence reviewed</span>
-            <span class="time" data-i18n="time.earlier">Earlier</span>
+        <div class="task-card bg-layout" data-page-node-id="BCEg30m7Vgd2be5eAR8x2k">
+          <div class="row1" data-page-node-id="33BEihu1gkVhwAeF4m1gDp"><span class="t-name" data-page-node-id="gX1LmTFvZPRlcTOTKrZJbj">Colonoscopy screening guidelines</span></div>
+          <div class="row2" data-page-node-id="btryvAcUEA6gt60pSCNy9I">
+            <span class="sub" data-page-node-id="98nbJCCsBNOGr25UVDmIYn">Guideline summary drafted</span>
+            <span class="time" data-i18n="time.earlier" data-page-node-id="4eEIepyDwkBLmzY4jC3bEX">Earlier</span>
           </div>
         </div>
 
-        <div class="task-card bg-progress">
-          <div class="row1">
-            <span class="t-name">CRISPR Off-target Analysis</span>
-            <span class="sicon i-load"></span>
-          </div>
-          <div class="row2">
-            <span class="sub">Off-target scan done: 2 sites flagged f...</span>
-            <span class="time" data-i18n="time.justNow">Just now</span>
+        <div class="task-card bg-layout" data-page-node-id="PaJyeiKgH5Ugzg5irLCQMV">
+          <div class="row1" data-page-node-id="YTZKAqy9BCSqBwfzMkZgnN"><span class="t-name" data-page-node-id="34cgdvwX6ikGANitUI79fh">Colonoscopy screening guidelines</span></div>
+          <div class="row2" data-page-node-id="In6IqLI5IHRztWosyCLNIT">
+            <span class="sub" data-page-node-id="HsQeyL6bgyLfNX8673CiPg">Screening evidence reviewed</span>
+            <span class="time" data-i18n="time.earlier" data-page-node-id="XSeZhCjFMGXxHAD0o23VMi">Earlier</span>
           </div>
         </div>
 
-        <div class="task-card bg-warn">
-          <div class="row1">
-            <span class="t-name">Gut Microbiome Diversity Report</span>
-            <span class="sicon i-warn"></span>
+        <div class="task-card bg-progress" data-page-node-id="KBh8EgTMWPAYaYbfl3jEaF">
+          <div class="row1" data-page-node-id="xjeurhekkRv0IGdVH9jZJ7">
+            <span class="t-name" data-page-node-id="s5AKkG2IemzZWSqtTso0U9">CRISPR Off-target Analysis</span>
+            <span class="sicon i-load" data-page-node-id="Qa5uhOcl2VLgGgNHWhCTLx"></span>
           </div>
-          <div class="row2">
-            <span class="sub">Alpha diversity ready. Beta diversity s...</span>
-            <span class="time" data-i18n="time.1d">1d ago</span>
+          <div class="row2" data-page-node-id="3oTpyZQXOE2KME0OEPX4dv">
+            <span class="sub" data-page-node-id="u7vc3rWGFGOjnBjhdGDL8Y">Off-target scan done: 2 sites flagged f...</span>
+            <span class="time" data-i18n="time.justNow" data-page-node-id="pm4lHTBwpwWZUvPpzXijlc">Just now</span>
+          </div>
+        </div>
+
+        <div class="task-card bg-warn" data-page-node-id="YoALdeGE17nobyAPLdPgnK">
+          <div class="row1" data-page-node-id="BGpYYBCxHOz2YSYM0uJoAi">
+            <span class="t-name" data-page-node-id="0HjvrnhBha3N3X2luehntE">Gut Microbiome Diversity Report</span>
+            <span class="sicon i-warn" data-page-node-id="ssUWjjl9Ol8T6n2EHpHPeC"></span>
+          </div>
+          <div class="row2" data-page-node-id="CNStzrD4qm5g6u88X3sRA4">
+            <span class="sub" data-page-node-id="DFz5SZKvn9W2h94rHByHaX">Alpha diversity ready. Beta diversity s...</span>
+            <span class="time" data-i18n="time.1d" data-page-node-id="O0jyhp8lq91lklcVwVq6ja">1d ago</span>
           </div>
         </div>
 
@@ -3480,30 +3496,30 @@
 
     <!-- Long-press action menu on task cards (Figma 3199:137883):
          Rename / Pin(Unpin) / Remove / Move to Project / Delete. -->
-    <div class="sb-lpmenu" id="pj-lpmenu">
-      <button class="m-item" id="plp-rename-btn">
-        <img class="mono" src="assets/icon_rename.svg" alt="">
-        <span class="lbl" data-i18n="pj.rename">Rename</span>
+    <div class="sb-lpmenu" id="pj-lpmenu" data-page-node-id="HgNDuCWm0oCKfsDPi2VRRJ">
+      <button class="m-item" id="plp-rename-btn" data-page-node-id="kX95TAP30PH19LBm2bcydF">
+        <img class="mono" src="assets/icon_rename.svg" alt="" data-page-node-id="jUcJ45Y8Dj6SGgTONbnHrC">
+        <span class="lbl" data-i18n="pj.rename" data-page-node-id="fDrbQ8EXl0qG5zpzBrBEBh">Rename</span>
       </button>
-      <button class="m-item" id="plp-pin-btn">
-        <img class="mono" id="plp-pin-icon" src="assets/icon_pin.svg" alt="">
-        <span class="lbl" id="plp-pin-lbl" data-i18n="pj.pin">Pin</span>
+      <button class="m-item" id="plp-pin-btn" data-page-node-id="iC8G758EzqgfNLT68gSrLt">
+        <img class="mono" id="plp-pin-icon" src="assets/icon_pin.svg" alt="" data-page-node-id="TZpP03q4Gvwy6QLZlHjq7o">
+        <span class="lbl" id="plp-pin-lbl" data-i18n="pj.pin" data-page-node-id="F2IlkAlZymfzkCeUBUQGKj">Pin</span>
       </button>
-      <button class="m-item" id="plp-remove-btn">
-        <img class="mono" src="assets/icon_folder_remove.svg" alt="">
-        <span class="lbl" data-i18n="lp.remove">Remove</span>
+      <button class="m-item" id="plp-remove-btn" data-page-node-id="edccNdvl9dWBHGErF5Eodw">
+        <img class="mono" src="assets/icon_folder_remove.svg" alt="" data-page-node-id="DQBmBZAX37evaX13S7TVhV">
+        <span class="lbl" data-i18n="lp.remove" data-page-node-id="CKUpOrX3AO3N0FGJCOlmre">Remove</span>
       </button>
-      <button class="m-item" id="plp-move-btn">
-        <img class="mono" src="assets/icon_folder_move.svg" alt="">
-        <span class="lbl" data-i18n="lp.move">Move to Project</span>
+      <button class="m-item" id="plp-move-btn" data-page-node-id="fznmhNANQn3lu99PlxYHfJ">
+        <img class="mono" src="assets/icon_folder_move.svg" alt="" data-page-node-id="kQKY3dDnHjgXW8WZmWzFPI">
+        <span class="lbl" data-i18n="lp.move" data-page-node-id="xqCHfn2dnc1sDs7PResOPA">Move to Project</span>
       </button>
-      <button class="m-item danger" id="plp-delete-btn">
-        <img src="assets/icon_delete.svg" alt="">
-        <span class="lbl" data-i18n="pj.delete">Delete</span>
+      <button class="m-item danger" id="plp-delete-btn" data-page-node-id="IiomAPFOjgRA3SRktbuBRk">
+        <img src="assets/icon_delete.svg" alt="" data-page-node-id="rXFABCcOJXHm83rADaMkHI">
+        <span class="lbl" data-i18n="pj.delete" data-page-node-id="at3SIVZwA0sh8ENExnQz7R">Delete</span>
       </button>
     </div>
 
-    <div class="pj-fade"></div>
+    <div class="pj-fade" data-page-node-id="DV0cg3yUOn5VFP0steJ7to"></div>
 
     <!-- Input: the shared #composer node is re-parented here by dockComposer()
          while the project view is open (same interaction as home, Figma 3206:139294) -->
@@ -3513,29 +3529,29 @@
   <!-- ============ Search view (Figma 3130:165656 / 3130:165997) ============
        Opened from the project header search icon. States: default (empty),
        results (fuzzy-filtered task cards), no result (mascot + copy). -->
-  <div class="search-view">
+  <div class="search-view" data-page-node-id="iBWzFWagl5ynaF2AoRRoGp">
 
-    <div class="sch-bar">
-      <div class="sch-input">
-        <img class="mono" src="assets/icon_search.svg" alt="">
-        <input id="sch-input" type="text" placeholder="Search task history" autocomplete="off">
-        <button class="sch-clear" id="sch-clear" aria-label="Clear">
-          <img class="mono" src="assets/icon_clear.svg" alt="">
+    <div class="sch-bar" data-page-node-id="KjSEjFX8S1LPtndXBuFl8U">
+      <div class="sch-input" data-page-node-id="60xgF7jj80sjXYLwLyUqYD">
+        <img class="mono" src="assets/icon_search.svg" alt="" data-page-node-id="VxI9AaaPq76gJPHmbvhpQC">
+        <input id="sch-input" type="text" placeholder="Search task history" autocomplete="off" data-page-node-id="yhT4BdOJkPnkfxAqXRiwT3">
+        <button class="sch-clear" id="sch-clear" aria-label="Clear" data-page-node-id="QG25WNOyUAGlLKwdWKbww4">
+          <img class="mono" src="assets/icon_clear.svg" alt="" data-page-node-id="HxlllXYACGNj8giaK6DSkc">
         </button>
       </div>
-      <button class="sch-cancel" id="sch-cancel" data-i18n="search.cancel">Cancel</button>
+      <button class="sch-cancel" id="sch-cancel" data-i18n="search.cancel" data-page-node-id="D2CeUZWeUSfu5EYhvMUeo9">Cancel</button>
     </div>
 
-    <div class="sch-scroll">
-      <div class="pj-list" id="sch-list"></div>
+    <div class="sch-scroll" data-page-node-id="8giI2aaSkW4s38E68TvGCg">
+      <div class="pj-list" id="sch-list" data-page-node-id="7SZOGpmO2b2ZlnqZGj2OWn"></div>
     </div>
 
-    <div class="sch-empty">
-      <img src="assets/mxj_no_result.png" alt="">
-      <div class="txt" data-i18n="search.noresult">No results found</div>
+    <div class="sch-empty" data-page-node-id="i4JVWGN8Q3vEQHt8DIILSl">
+      <img src="assets/mxj_no_result.png" alt="" data-page-node-id="dELHgydo2XfxacFkF3pgn5">
+      <div class="txt" data-i18n="search.noresult" data-page-node-id="daYoTm62mDlFUZ5Y5uRhoN">No results found</div>
     </div>
 
-    <div class="sch-fade"></div>
+    <div class="sch-fade" data-page-node-id="gHid2xfzuZ360iGeXV5Pyj"></div>
 
   </div>
 
@@ -3543,262 +3559,262 @@
        Entry: tapping any task card (home / Task tab / project list), or
        sending a message from the home/project composer (creates the task).
        The shared #composer is re-parented into .bottom by dockComposer(). -->
-  <div class="chat-view">
+  <div class="chat-view" data-page-node-id="pRqfyNhhA17gfkjQFcdBDi">
 
-    <div class="chat-header">
-      <button class="ch-round" id="chat-back" aria-label="Back">
-        <img class="mono" src="assets/icon_back.svg" alt="">
+    <div class="chat-header" data-page-node-id="Y7S33cPP3dkMFcdfqmjRKh">
+      <button class="ch-round" id="chat-back" aria-label="Back" data-page-node-id="Bk2eDD8ItBUjCWAd0DPuG1">
+        <img class="mono" src="assets/icon_back.svg" alt="" data-page-node-id="IGXBvR47KARGusMcWDt8J0">
       </button>
-      <div class="chat-title-block" id="chat-title-block">
-        <div class="name" id="chat-title">Task</div>
-        <div class="sub" id="chat-sub">
-          <img class="mono dev" src="assets/icon_mac_sm.svg" alt="">
-          <span id="chat-device">GL 的 Mac mini</span>
-          <img class="mono chev" src="assets/icon_expand13.svg" alt="">
-          <span class="sep">·</span>
-          <span id="chat-status" class="st-run">In Progress</span>
+      <div class="chat-title-block" id="chat-title-block" data-page-node-id="j030deu35e8hMTphhZ5yb1">
+        <div class="name" id="chat-title" data-page-node-id="qDZpe892ZhGqbrmSA0xptG">Task</div>
+        <div class="sub" id="chat-sub" data-page-node-id="Hc1PNG4HkTKnUWIhpK2XVw">
+          <img class="mono dev" src="assets/icon_mac_sm.svg" alt="" data-page-node-id="RbRQRLHH4VOc7ehi09o3RT">
+          <span id="chat-device" data-page-node-id="3VGucu9zCas1nZm7rcg4Up">GL 的 Mac mini</span>
+          <img class="mono chev" src="assets/icon_expand13.svg" alt="" data-page-node-id="DVGHwK4N0kyGXrdVyXazBx">
+          <span class="sep" data-page-node-id="9SbapOhFKDP0W5Ka716a0X">·</span>
+          <span id="chat-status" class="st-run" data-page-node-id="tksHiFcCcSqaQJE0So66Mn">In Progress</span>
         </div>
       </div>
-      <div class="ch-capsule">
-        <button class="ch-round" id="chat-new" aria-label="New task">
-          <img class="mono" src="assets/icon_add.svg" alt="">
+      <div class="ch-capsule" data-page-node-id="j6vkAriVgyiFyzi25nX5Ac">
+        <button class="ch-round" id="chat-new" aria-label="New task" data-page-node-id="WdPfsBEK0cEFkf1QhmgWYJ">
+          <img class="mono" src="assets/icon_add.svg" alt="" data-page-node-id="XrWbzXRYpwD4ZnQxRd8SOL">
         </button>
-        <button class="ch-round" id="chat-more" aria-label="More">
-          <img class="mono" src="assets/icon_more.svg" alt="">
+        <button class="ch-round" id="chat-more" aria-label="More" data-page-node-id="aOUlSA7TF9M4YiLEGwBdtD">
+          <img class="mono" src="assets/icon_more.svg" alt="" data-page-node-id="OPAw3SDcmPpCvI3lhe9pxC">
         </button>
       </div>
     </div>
 
-    <div class="ch-menu" id="ch-menu">
-      <button id="ch-menu-copy" data-i18n="chat.menu.copy">Copy conversation</button>
-      <button id="ch-menu-status">Mark as completed</button>
+    <div class="ch-menu" id="ch-menu" data-page-node-id="U9VsizCXmq7OCB0nOx9Cgf">
+      <button id="ch-menu-copy" data-i18n="chat.menu.copy" data-page-node-id="eUnHHgyuzZwYEpGZ5lmEoX">Copy conversation</button>
+      <button id="ch-menu-status" data-page-node-id="mnWilvcgo4vvxeqjG9PmSe">Mark as completed</button>
     </div>
 
-    <div class="chat-scroll">
-      <div class="chat-list" id="chat-list"></div>
+    <div class="chat-scroll" data-page-node-id="Lgv6MnNLa5s44JDOSQTGDu">
+      <div class="chat-list" id="chat-list" data-page-node-id="cPjNSzDB98ANy0DOnRJ0jr"></div>
     </div>
 
-    <button class="chat-jump hidden" id="chat-jump" aria-label="Scroll to latest">
-      <img class="mono" src="assets/icon_ch_down.svg" alt="">
+    <button class="chat-jump hidden" id="chat-jump" aria-label="Scroll to latest" data-page-node-id="1OdmIcegIEPlCKs1z0aA5X">
+      <img class="mono" src="assets/icon_ch_down.svg" alt="" data-page-node-id="SnapCm35lMxW6MU9c7zqhp">
     </button>
-    <div class="chat-fade"></div>
+    <div class="chat-fade" data-page-node-id="Mv17o0phgcQAMitUUBIvtd"></div>
 
     <!-- Input: the shared #composer node is re-parented here by dockComposer()
          while the conversation view is open -->
-    <div class="bottom" id="chat-bottom"></div>
+    <div class="bottom" id="chat-bottom" data-page-node-id="GaHerb6G2a5xTCTb5yqSjM"></div>
 
   </div>
 
   <!-- ============ Discover view (Figma 3322:157898) ============ -->
-  <div class="discover-view">
-    <div class="disc-title" data-i18n="disc.title">Discover</div>
+  <div class="discover-view" data-page-node-id="zJHCx6OosZqI3Wq53PWZtu">
+    <div class="disc-title" data-i18n="disc.title" data-page-node-id="EmXxDMCv8EFAICy6EF8ypH">Discover</div>
 
-    <div class="disc-scroll">
+    <div class="disc-scroll" data-page-node-id="7BqLU7FeSEnGKr8DdvcwPC">
       <!-- Hero banner + mascot -->
-      <div class="disc-hero">
-        <div class="copy" data-i18n-html="disc.hero">Just speak<br>I'll handle the rest</div>
-        <img class="disc-mascot" src="assets/disc_mascot.png" alt="">
+      <div class="disc-hero" data-page-node-id="HGJ1qivV0LskAWBuPyiUf8">
+        <div class="copy" data-i18n-html="disc.hero" data-page-node-id="IqTodaNOCWo60SodDFHGP5">Just speak<br data-page-node-id="2Btc77hFe3yjHoURmd7PAR">I'll handle the rest</div>
+        <img class="disc-mascot" src="assets/disc_mascot.png" alt="" data-page-node-id="Lv7syBS5bA9lgcdFMaR9tZ">
       </div>
 
       <!-- Category cards, row 1 -->
-      <div class="disc-cards">
-        <div class="disc-card agent">
-          <div class="dc-head">
-            <div class="dc-name" data-i18n="disc.agent">Agent</div>
-            <div class="dc-sub" data-i18n="disc.agentSub">Your AI teammate</div>
+      <div class="disc-cards" data-page-node-id="9P1Cekb1FhecMQ3E2XMvAU">
+        <div class="disc-card agent" data-page-node-id="1iVvMIR1NThBw9CBPAoQvx">
+          <div class="dc-head" data-page-node-id="Wz74TTVCJG0tOqEekkUFNo">
+            <div class="dc-name" data-i18n="disc.agent" data-page-node-id="f154xmljOLIuxCqReaOR8H">Agent</div>
+            <div class="dc-sub" data-i18n="disc.agentSub" data-page-node-id="lrnPawL0xOU0dxfCRaqG0r">Your AI teammate</div>
           </div>
-          <div class="dc-foot">
-            <div class="dc-num">15</div>
-            <img class="dc-ico" src="assets/disc_ai.svg" alt="">
-            <img class="dc-ico dk" src="assets/disc_ai_dark.svg" alt="">
+          <div class="dc-foot" data-page-node-id="jsp72G9Xj8NNXJsZQti14E">
+            <div class="dc-num" data-page-node-id="dVWzq2fY6eMAvhrFExV2bZ">15</div>
+            <img class="dc-ico" src="assets/disc_ai.svg" alt="" data-page-node-id="OecQ3qxaFDyrci6iGfO6bi">
+            <img class="dc-ico dk" src="assets/disc_ai_dark.svg" alt="" data-page-node-id="ODxN5mVbUxWyKqYCgkItRU">
           </div>
         </div>
-        <div class="disc-card talent">
-          <div class="dc-head">
-            <div class="dc-name" data-i18n="disc.talent">Talent Market</div>
-            <div class="dc-sub" data-i18n="disc.talentSub">Hire in one click</div>
+        <div class="disc-card talent" data-page-node-id="qpx1sPOdN4LgAlSZX1bOqP">
+          <div class="dc-head" data-page-node-id="h7wuQY4APPcvx730aefmDL">
+            <div class="dc-name" data-i18n="disc.talent" data-page-node-id="VjUpfAxaEZVBVEVYrCB6rS">Talent Market</div>
+            <div class="dc-sub" data-i18n="disc.talentSub" data-page-node-id="RwxgtsNviUKr6EiYFwZCpA">Hire in one click</div>
           </div>
-          <div class="dc-foot">
-            <div class="dc-num">20</div>
-            <img class="dc-ico" src="assets/disc_memory.svg" alt="">
-            <img class="dc-ico dk" src="assets/disc_memory_dark.svg" alt="">
+          <div class="dc-foot" data-page-node-id="fzkjF8yRSUW6BfoFJ7bqvh">
+            <div class="dc-num" data-page-node-id="nEY1kDRbMMmxwkhPaQBCOD">20</div>
+            <img class="dc-ico" src="assets/disc_memory.svg" alt="" data-page-node-id="wySKJGBdx7AzU4WVZ48Pxs">
+            <img class="dc-ico dk" src="assets/disc_memory_dark.svg" alt="" data-page-node-id="RfBvE6kzOZPI5SuPRxHaiR">
           </div>
         </div>
       </div>
 
       <!-- Category cards, row 2 -->
-      <div class="disc-cards">
-        <div class="disc-card model">
-          <div class="dc-head">
-            <div class="dc-name" data-i18n="disc.model">Scientific Model</div>
-            <div class="dc-sub" data-i18n="disc.modelSub">AI for Life Sciences</div>
+      <div class="disc-cards" data-page-node-id="mpNbfCG9md0xWi0fg611Gg">
+        <div class="disc-card model" data-page-node-id="jpglAvAqPmgy57DxQo35EZ">
+          <div class="dc-head" data-page-node-id="Su8D9F4EWMvO1djXV6d3Wg">
+            <div class="dc-name" data-i18n="disc.model" data-page-node-id="JeM2IWO5mvsk6EhaXgO0uF">Scientific Model</div>
+            <div class="dc-sub" data-i18n="disc.modelSub" data-page-node-id="JqEBumIcQaUYX9CKmgEmra">AI for Life Sciences</div>
           </div>
-          <div class="dc-foot">
-            <div class="dc-num">55</div>
-            <img class="dc-ico" src="assets/disc_model.svg" alt="">
-            <img class="dc-ico dk" src="assets/disc_model_dark.svg" alt="">
+          <div class="dc-foot" data-page-node-id="e3L9KEwIxC3SP27TgNg7oi">
+            <div class="dc-num" data-page-node-id="y1RgLu0VH2ABkdKQuMEAqn">55</div>
+            <img class="dc-ico" src="assets/disc_model.svg" alt="" data-page-node-id="ViRaehsj0JZyR0aU4P0iHB">
+            <img class="dc-ico dk" src="assets/disc_model_dark.svg" alt="" data-page-node-id="HTSg6OYbaT766VBKTj8X2C">
           </div>
         </div>
-        <div class="disc-card skills">
-          <div class="dc-head">
-            <div class="dc-name" data-i18n="disc.skills">Skills</div>
-            <div class="dc-sub" data-i18n="disc.skillsSub">Master of all trades</div>
+        <div class="disc-card skills" data-page-node-id="kOL89vfrWPkDDZ8EazHoW8">
+          <div class="dc-head" data-page-node-id="UF64x2NpytrQDvbftaARiH">
+            <div class="dc-name" data-i18n="disc.skills" data-page-node-id="CUJUGuLT4ZI9PwP0ZqhXHB">Skills</div>
+            <div class="dc-sub" data-i18n="disc.skillsSub" data-page-node-id="8Plc1K6fc6yT6aWVv2dgtO">Master of all trades</div>
           </div>
-          <div class="dc-foot">
-            <div class="dc-num">882</div>
-            <img class="dc-ico" src="assets/disc_puzzle.svg" alt="">
-            <img class="dc-ico dk" src="assets/disc_puzzle_dark.svg" alt="">
+          <div class="dc-foot" data-page-node-id="0tVkkAYgsxhgxOYUJCeJqR">
+            <div class="dc-num" data-page-node-id="GFIB9AfXmZbTDcyzKfs3e0">882</div>
+            <img class="dc-ico" src="assets/disc_puzzle.svg" alt="" data-page-node-id="7TrcpWmRAcVm5sQCWXRfBL">
+            <img class="dc-ico dk" src="assets/disc_puzzle_dark.svg" alt="" data-page-node-id="6Y36IZLAn5yAGk2UiR3hGl">
           </div>
         </div>
       </div>
 
       <!-- Entry rows -->
-      <div class="disc-row r12">
-        <div class="dr-l">
-          <img class="mono" src="assets/icon_connector.svg" alt="">
-          <div class="dr-name" data-i18n="disc.connector">Connector</div>
+      <div class="disc-row r12" data-page-node-id="zwOZzMiDje3utDNv6gWOmX">
+        <div class="dr-l" data-page-node-id="u5yRFRhzBIJdUXSnHBdMgR">
+          <img class="mono" src="assets/icon_connector.svg" alt="" data-page-node-id="Srw79fkwNqgEO6rGKl1N8d">
+          <div class="dr-name" data-i18n="disc.connector" data-page-node-id="5TvVdzuCpjMtxQpXEUeSfd">Connector</div>
         </div>
-        <div class="dr-r">
-          <div class="dr-val">5</div>
-          <img class="mono" src="assets/disc_chev.svg" alt="">
-        </div>
-      </div>
-      <div class="disc-row r12">
-        <div class="dr-l">
-          <img class="mono" src="assets/disc_squad.svg" alt="">
-          <div class="dr-name" data-i18n="disc.squad">Squad</div>
-        </div>
-        <div class="dr-r">
-          <div class="dr-val" data-i18n="disc.squadVal">6</div>
-          <img class="mono" src="assets/disc_chev.svg" alt="">
+        <div class="dr-r" data-page-node-id="3MUV7ME9ZhrIbJLcjnxvwj">
+          <div class="dr-val" data-page-node-id="gQoH78HpoFCaPmniRGDDTh">5</div>
+          <img class="mono" src="assets/disc_chev.svg" alt="" data-page-node-id="93P2vSWhUJfzO8BEFqgTu2">
         </div>
       </div>
-      <div class="disc-row">
-        <div class="dr-l">
-          <img class="mono" src="assets/disc_office.svg" alt="">
-          <div class="dr-name" data-i18n="disc.office">Office</div>
+      <div class="disc-row r12" data-page-node-id="NOcBYdoTGTJ4p6QgUxe8Js">
+        <div class="dr-l" data-page-node-id="pmAHKwJ2cHOMOPsASFYEtG">
+          <img class="mono" src="assets/disc_squad.svg" alt="" data-page-node-id="zdU8DVlpDpeKL4GaCwnX3T">
+          <div class="dr-name" data-i18n="disc.squad" data-page-node-id="oZWzImM97ncBv0amLnNxOK">Squad</div>
         </div>
-        <div class="dr-r">
-          <div class="dr-val">15</div>
-          <img class="mono" src="assets/disc_chev.svg" alt="">
+        <div class="dr-r" data-page-node-id="livvkjjEFaEPY4dZREXDgh">
+          <div class="dr-val" data-i18n="disc.squadVal" data-page-node-id="PGOnY6aZfj7uHh7qf8nEUI">6</div>
+          <img class="mono" src="assets/disc_chev.svg" alt="" data-page-node-id="OuvXi08yycr9LJJu5hrVBu">
         </div>
       </div>
-      <div class="disc-row">
-        <div class="dr-l">
-          <img class="mono" src="assets/disc_library.svg" alt="">
-          <div class="dr-name" data-i18n="disc.growth">Growth</div>
+      <div class="disc-row" data-page-node-id="um514EkFO5arRRn6ZVJ6Nb">
+        <div class="dr-l" data-page-node-id="s6pnUJDsfGFOjfhwdXN7m7">
+          <img class="mono" src="assets/disc_office.svg" alt="" data-page-node-id="b2P9030qCMAKxLUEgdgjfN">
+          <div class="dr-name" data-i18n="disc.office" data-page-node-id="grG7B1qlES8ASlDk3uKwgq">Office</div>
         </div>
-        <div class="dr-r">
-          <div class="dr-val" data-i18n="disc.growthVal">24</div>
-          <img class="mono" src="assets/disc_chev.svg" alt="">
+        <div class="dr-r" data-page-node-id="BXBSQd2bQkBzRSbxxYt8sS">
+          <div class="dr-val" data-page-node-id="9aiKctgSE4Ftop7rQ8AKib">15</div>
+          <img class="mono" src="assets/disc_chev.svg" alt="" data-page-node-id="SxFQr3XarG1r00UuHxuvxb">
+        </div>
+      </div>
+      <div class="disc-row" data-page-node-id="SV6GA5a6rVP4JsJ3x9eMmF">
+        <div class="dr-l" data-page-node-id="q2Nr4BOv2tV3GsDkieuPzM">
+          <img class="mono" src="assets/disc_library.svg" alt="" data-page-node-id="ziL5FzxKCAHZE0o7xDDTpP">
+          <div class="dr-name" data-i18n="disc.growth" data-page-node-id="YH7kwLawwNuu1zdJAZ9w5f">Growth</div>
+        </div>
+        <div class="dr-r" data-page-node-id="TqC8TrVqBzWcOsh0w9CTHB">
+          <div class="dr-val" data-i18n="disc.growthVal" data-page-node-id="JXYfdT5qxjzzn8gjHSmN5A">24</div>
+          <img class="mono" src="assets/disc_chev.svg" alt="" data-page-node-id="aYTFYeM8e6vPhxPynNq23t">
         </div>
       </div>
     </div>
 
-    <div class="disc-fade"></div>
+    <div class="disc-fade" data-page-node-id="4xdaYaIZBnDw4nIbahfwv0"></div>
   </div>
 
   <!-- ============ Me view ============ -->
-  <div class="me-view">
+  <div class="me-view" data-page-node-id="aaAeeOTNjejGZuZVNQXZag">
 
-    <div class="me-content">
+    <div class="me-content" data-page-node-id="oB0irkFgR07KVi1RnAnns5">
 
       <!-- Profile -->
-      <div class="me-profile">
-        <img class="avatar" id="me-avatar" src="assets/avatar.svg" alt="lucat" style="cursor: pointer;">
-        <div class="name" id="me-name">lucat</div>
+      <div class="me-profile" data-page-node-id="eBfdRrMuAsyUKAi2q1lDjn">
+        <img class="avatar" id="me-avatar" src="assets/avatar.svg" alt="lucat" style="cursor: pointer;" data-page-node-id="F914Vz7nAzvV9Rxf2yHh40">
+        <div class="name" id="me-name" data-page-node-id="9H9yXP8j7QEEPVhSyUpGFL">lucat</div>
       </div>
 
       <!-- Settings -->
-      <div class="me-settings">
+      <div class="me-settings" data-page-node-id="Zz6BglFN5VxDOTu0eAlY4i">
 
         <!-- Latest notification -->
-        <div class="me-notice">
-          <img class="bell" src="assets/icon_notification.svg" alt="">
-          <div class="txt">
-            <span class="t" data-i18n="me.latest">Latest :</span>
-            <span class="m">Organoid Project - Pendin...</span>
+        <div class="me-notice" data-page-node-id="yp7GgILg5LDWuey5pbjB9r">
+          <img class="bell" src="assets/icon_notification.svg" alt="" data-page-node-id="4eZWhqEAkFfG4X5AcQi8GD">
+          <div class="txt" data-page-node-id="QbEmebtwYZy1XGDjNddGGa">
+            <span class="t" data-i18n="me.latest" data-page-node-id="EBPLY9qrTHHvdQ4di7XubN">Latest :</span>
+            <span class="m" data-page-node-id="yg41biNljAzSRBH7AENvY1">Organoid Project - Pendin...</span>
           </div>
-          <img class="chev" src="assets/icon_chevron_white.svg" alt="">
+          <img class="chev" src="assets/icon_chevron_white.svg" alt="" data-page-node-id="TzEoMXgPWFVLHpNcQpDgu4">
         </div>
 
-        <div class="me-rows">
-          <button class="me-row" id="row-status">
-            <div class="left">
-              <img class="mono" src="assets/icon_info.svg" alt="">
-              <span class="label" data-i18n="me.status">Status Indicator</span>
+        <div class="me-rows" data-page-node-id="spCaE5vnVlVBjblgXvHtVZ">
+          <button class="me-row" id="row-status" data-page-node-id="GC4WAWbcmeHRm9zVbeqLCD">
+            <div class="left" data-page-node-id="Q50BMBpahpDKS46vWggFr9">
+              <img class="mono" src="assets/icon_info.svg" alt="" data-page-node-id="z8Wbhq0RDm5jTVS7shOPJQ">
+              <span class="label" data-i18n="me.status" data-page-node-id="8BneRgxIecZa98FH9dYi8f">Status Indicator</span>
             </div>
-            <div class="right">
-              <span class="value" id="me-status-val" data-state="enabled" data-i18n-val="val.enabled">Enabled</span>
-              <img class="mono" src="assets/icon_chevron.svg" alt="">
-            </div>
-          </button>
-
-          <button class="me-row static">
-            <div class="left">
-              <img class="mono" src="assets/icon_email.svg" alt="">
-              <span class="label" data-i18n="me.email">E-mail</span>
-            </div>
-            <div class="right">
-              <span class="value">lucat@megarobo.com</span>
+            <div class="right" data-page-node-id="eJoNecdzwN2b8KX8JEQNCA">
+              <span class="value" id="me-status-val" data-state="enabled" data-i18n-val="val.enabled" data-page-node-id="odz9JJ8pYmPYVrmwxfcYW8">Enabled</span>
+              <img class="mono" src="assets/icon_chevron.svg" alt="" data-page-node-id="dVaLJ48HUaACPULs9gzLYJ">
             </div>
           </button>
 
-          <button class="me-row" id="row-devices">
-            <div class="left">
-              <img class="mono" src="assets/icon_devices.svg" alt="">
-              <span class="label" data-i18n="me.devices">Connected Devices</span>
+          <button class="me-row static" data-page-node-id="d1qMbtUw5zCmXDKAtWBGjw">
+            <div class="left" data-page-node-id="kiG4PWRKnRUkMbxju7o4H5">
+              <img class="mono" src="assets/icon_email.svg" alt="" data-page-node-id="zNKb0tO1cOuivo1AjHsqnz">
+              <span class="label" data-i18n="me.email" data-page-node-id="AeOMLrQjvlRPxjGyZhBex6">E-mail</span>
             </div>
-            <div class="right">
-              <span class="value" id="me-devices-val">3</span>
-              <img class="mono" src="assets/icon_chevron.svg" alt="">
-            </div>
-          </button>
-
-          <button class="me-row" id="row-language">
-            <div class="left">
-              <img class="mono" src="assets/icon_language.svg" alt="">
-              <span class="label" data-i18n="me.language">Language</span>
-            </div>
-            <div class="right">
-              <span class="value" id="me-lang-val">Follow System</span>
-              <img class="mono" src="assets/icon_chevron.svg" alt="">
+            <div class="right" data-page-node-id="6Ac1F281hrshmxyUSwgy7l">
+              <span class="value" data-page-node-id="vPiX6awNUtAltP3jZotCyI">lucat@megarobo.com</span>
             </div>
           </button>
 
-          <button class="me-row" id="row-appearance">
-            <div class="left">
-              <img class="mono" src="assets/icon_appearance.svg" alt="">
-              <span class="label" data-i18n="me.appearance">Appearance</span>
+          <button class="me-row" id="row-devices" data-page-node-id="UDtCHNhiatCjEMHJGNaD3m">
+            <div class="left" data-page-node-id="lZnls9Ik4ThEj24InsUSER">
+              <img class="mono" src="assets/icon_devices.svg" alt="" data-page-node-id="M69fayddWIvEA6Ql1dvbVI">
+              <span class="label" data-i18n="me.devices" data-page-node-id="WOfenSJb12ViwQmyXWyCyE">Connected Devices</span>
             </div>
-            <div class="right">
-              <span class="value" id="me-appear-val">Follow System</span>
-              <img class="mono" src="assets/icon_chevron.svg" alt="">
+            <div class="right" data-page-node-id="JmEiI5TmxXwjUOMvB5FCmI">
+              <span class="value" id="me-devices-val" data-page-node-id="ZQLS44MOwAoRDD8gnOene3">3</span>
+              <img class="mono" src="assets/icon_chevron.svg" alt="" data-page-node-id="LE4EolQ5WmCF4CZXikGcZn">
+            </div>
+          </button>
+
+          <button class="me-row" id="row-language" data-page-node-id="pt3Szmz3B37M8RcFRuz6Nx">
+            <div class="left" data-page-node-id="5D4tOOhQgEcoByvEuMT4O1">
+              <img class="mono" src="assets/icon_language.svg" alt="" data-page-node-id="GCnqGVlHlW0moSP7SKX62V">
+              <span class="label" data-i18n="me.language" data-page-node-id="0pq6BEOWGlA5vVEMJfLHf9">Language</span>
+            </div>
+            <div class="right" data-page-node-id="kaQ7KBlC9xHBOcK2xJr0am">
+              <span class="value" id="me-lang-val" data-page-node-id="PJ1tlH6ea3tZEhy7n5EWbt">Follow System</span>
+              <img class="mono" src="assets/icon_chevron.svg" alt="" data-page-node-id="ZK8Zyg1xrvBFexdC6AEVlh">
+            </div>
+          </button>
+
+          <button class="me-row" id="row-appearance" data-page-node-id="yA5FH5aIRJRoQJScCqxf8i">
+            <div class="left" data-page-node-id="wpYNIjYF9iVyozTllkYNUW">
+              <img class="mono" src="assets/icon_appearance.svg" alt="" data-page-node-id="g0iIfN24u0x2VxiWnCaSOe">
+              <span class="label" data-i18n="me.appearance" data-page-node-id="3m47EEPMQuCdCVH8steMUQ">Appearance</span>
+            </div>
+            <div class="right" data-page-node-id="CQ5yefZ6GdYYwFtfUH4E4L">
+              <span class="value" id="me-appear-val" data-page-node-id="aVAWip3OtGNczMDcL9z2Ay">Follow System</span>
+              <img class="mono" src="assets/icon_chevron.svg" alt="" data-page-node-id="HjCFo8WbYQJosvTBEI4kws">
             </div>
           </button>
 
           <!-- App-shell version row: always opens the version details sheet.
              In app mode the silent OTA check only flags availability here —
              updating is explicit, from the sheet's Update button. -->
-          <button class="me-row" id="row-version">
-            <div class="left">
-              <img class="mono" src="assets/icon_ai_l.svg" alt="">
-              <span class="label" data-i18n="me.version">Version</span>
+          <button class="me-row" id="row-version" data-page-node-id="qLe3fDuGETeNv8Z6YZegMS">
+            <div class="left" data-page-node-id="HxFsWpHcGaeFBFJwwG12No">
+              <img class="mono" src="assets/icon_ai_l.svg" alt="" data-page-node-id="URjoaEOVElSOkSMJhtP3OV">
+              <span class="label" data-i18n="me.version" data-page-node-id="SaCB1KoDR8sp9a3FSkkAU5">Version</span>
             </div>
-            <div class="right ver-row-right">
-              <span class="ver-new-pill" data-i18n="ver.newAvailable">New version</span>
-              <span class="value" id="me-version-val">1.0.0</span>
-              <img class="mono" src="assets/icon_chevron.svg" alt="">
+            <div class="right ver-row-right" data-page-node-id="A7alUC4D66sKFiQMjiK9Pp">
+              <span class="ver-new-pill" data-i18n="ver.newAvailable" data-page-node-id="6KS5zcdwI1v4Xh5m4qf3IZ">New version</span>
+              <span class="value" id="me-version-val" data-page-node-id="DL0ubkOE9Df0xbLfBTZKHu">1.0.0</span>
+              <img class="mono" src="assets/icon_chevron.svg" alt="" data-page-node-id="EjVRsA4puI6Ybx572ECPAI">
             </div>
           </button>
         </div>
 
-        <div class="me-divider"></div>
+        <div class="me-divider" data-page-node-id="aIT3FZxVjlGE9WQajXSx6V"></div>
 
-        <button class="me-row me-logout" id="row-logout">
-          <div class="left">
-            <img src="assets/icon_exit.svg" alt="">
-            <span class="label" data-i18n="me.logout">Log Out</span>
+        <button class="me-row me-logout" id="row-logout" data-page-node-id="6iUAdVxjlIpFNoLcChKze6">
+          <div class="left" data-page-node-id="aoEmzncBDFHFt2C6VOfjFd">
+            <img src="assets/icon_exit.svg" alt="" data-page-node-id="9Ie788x6YhOMXllBJ6SSHp">
+            <span class="label" data-i18n="me.logout" data-page-node-id="6NMNNBkzNTu07gaqchCwB9">Log Out</span>
           </div>
         </button>
 
@@ -3808,320 +3824,320 @@
   </div>
 
   <!-- ============ Profile edit view ============ -->
-  <div class="profile-view">
+  <div class="profile-view" data-page-node-id="4FTi58eNj2I8XLVLz1fw4h">
 
     <!-- Header -->
-    <div class="pf-header">
-      <button class="icon-btn" id="pf-back" aria-label="Back">
-        <img class="mono" src="assets/icon_back.svg" alt="">
+    <div class="pf-header" data-page-node-id="CRGZ2Owkr84fSYwNdKrBBR">
+      <button class="icon-btn" id="pf-back" aria-label="Back" data-page-node-id="tpja4hxY9GivTTjsPEzoal">
+        <img class="mono" src="assets/icon_back.svg" alt="" data-page-node-id="UlPy9uxcPZmuJrhBGuzYZT">
       </button>
-      <div class="t-title" data-i18n="pf.title">Profile</div>
+      <div class="t-title" data-i18n="pf.title" data-page-node-id="E7l07TVgE4dgdcTTOV1N68">Profile</div>
     </div>
 
     <!-- Avatar + edit badge -->
-    <div class="pf-avatar-wrap">
-      <img src="assets/avatar.svg" alt="avatar">
-      <button class="pf-edit-badge" id="pf-edit" aria-label="Edit avatar">
-        <img class="mono" src="assets/icon_edit.svg" alt="">
+    <div class="pf-avatar-wrap" data-page-node-id="NvUNyXFu49l4QJtqBkFZ8R">
+      <img src="assets/avatar.svg" alt="avatar" data-page-node-id="pZoCxxHV7n2pyXnLaC2SMS">
+      <button class="pf-edit-badge" id="pf-edit" aria-label="Edit avatar" data-page-node-id="ukPm3GNJ1LCmDVCs9U2ZQZ">
+        <img class="mono" src="assets/icon_edit.svg" alt="" data-page-node-id="JZoQtyxfmHA4B6o7kTDD99">
       </button>
     </div>
 
     <!-- Username field -->
-    <div class="pf-field">
-      <div class="flabel" data-i18n="pf.username">Username</div>
-      <div class="pf-input">
-        <input id="pf-name" maxlength="30" value="Lucat" spellcheck="false">
-        <span class="count" id="pf-count">5/30</span>
+    <div class="pf-field" data-page-node-id="5mYGPQihDXWPwAUbeddlMx">
+      <div class="flabel" data-i18n="pf.username" data-page-node-id="rEFvuiLuwxmZTUrrZiX073">Username</div>
+      <div class="pf-input" data-page-node-id="WRwgrfCRv1UzSTICwsLDHi">
+        <input id="pf-name" maxlength="30" value="Lucat" spellcheck="false" data-page-node-id="XF6MzBBF0iptwnkPfQB5du">
+        <span class="count" id="pf-count" data-page-node-id="Xkqz7aJbmZmiqBFPtd9q8B">5/30</span>
       </div>
     </div>
 
     <!-- Actions -->
-    <div class="pf-actions">
-      <button class="pf-btn pf-btn-cancel" id="pf-cancel" data-i18n="pf.cancel">Cancel</button>
-      <button class="pf-btn pf-btn-submit" id="pf-submit" data-i18n="pf.submit">Submit</button>
+    <div class="pf-actions" data-page-node-id="At0VMzwNq1sKQ9HPE1atKk">
+      <button class="pf-btn pf-btn-cancel" id="pf-cancel" data-i18n="pf.cancel" data-page-node-id="wE1j6Ae5U5OgpQgtNTDlKp">Cancel</button>
+      <button class="pf-btn pf-btn-submit" id="pf-submit" data-i18n="pf.submit" data-page-node-id="IEhQP0GQfyzbee120bMfoE">Submit</button>
     </div>
 
   </div>
 
   <!-- ============ Notification (message center) view ============ -->
-  <div class="notify-view">
+  <div class="notify-view" data-page-node-id="L9FRMlnU1YGn1EouQxUSfn">
 
     <!-- Header -->
-    <div class="notify-header">
-      <button class="icon-btn" id="notify-back" aria-label="Back">
-        <img class="mono" src="assets/icon_back.svg" alt="">
+    <div class="notify-header" data-page-node-id="926apopejM1YMHSrJNeiRH">
+      <button class="icon-btn" id="notify-back" aria-label="Back" data-page-node-id="o3CZmWtHlBOcbkW8SAkPcq">
+        <img class="mono" src="assets/icon_back.svg" alt="" data-page-node-id="8d9988mUpffdCcDUaDPCnk">
       </button>
-      <div class="t-title" data-i18n="notify.title">Notification</div>
+      <div class="t-title" data-i18n="notify.title" data-page-node-id="LKsWZayWeZ95KAYteRZ5iA">Notification</div>
     </div>
 
     <!-- Filter pills -->
-    <div class="notify-filters" id="notify-filters">
-      <button class="notify-filter active" data-filter="all" data-i18n="notify.all">All</button>
-      <button class="notify-filter" data-filter="unread" data-i18n="notify.unread">Unread</button>
-      <button class="notify-filter" data-filter="read" data-i18n="notify.read">Read</button>
+    <div class="notify-filters" id="notify-filters" data-page-node-id="s7ZmOEAq3aDD579zuHCd61">
+      <button class="notify-filter active" data-filter="all" data-i18n="notify.all" data-page-node-id="I60cPpDXTMg058qzQoND4u">All</button>
+      <button class="notify-filter" data-filter="unread" data-i18n="notify.unread" data-page-node-id="XWZ6wPbB2ac5pKsVSqAZby">Unread</button>
+      <button class="notify-filter" data-filter="read" data-i18n="notify.read" data-page-node-id="cNXFBGLoIIKn0IRv2EvF7P">Read</button>
     </div>
 
     <!-- Cards -->
-    <div class="notify-list" id="notify-list">
+    <div class="notify-list" id="notify-list" data-page-node-id="WMbdmKXN6CC4enLcGQSE71">
 
-      <div class="notify-card unread" data-read="unread" data-msg="files">
-        <div class="head">
-          <div class="title" data-i18n="nc.files.title">Research files organization completed</div>
-          <div class="sub" data-i18n="nc.life.sub">Life Science Research · Markdown and citati...</div>
+      <div class="notify-card unread" data-read="unread" data-msg="files" data-page-node-id="VHNwFP9inKyzX5Y8k1BeEB">
+        <div class="head" data-page-node-id="s4fP1HmUyAOkPthjzKfI2z">
+          <div class="title" data-i18n="nc.files.title" data-page-node-id="r2NNkfkbPNDx91JbfDRkFS">Research files organization completed</div>
+          <div class="sub" data-i18n="nc.life.sub" data-page-node-id="S9vScsOe6cVjYJo9XINcxK">Life Science Research · Markdown and citati...</div>
         </div>
-        <div class="meta">
-          <div class="meta-left">
-            <img class="mono" src="assets/icon_cloud_blue.svg" alt="">
-            <span class="dev">Civia Cloud</span>
+        <div class="meta" data-page-node-id="AxyDKGitlPdbvBQB5N8HIv">
+          <div class="meta-left" data-page-node-id="ktEXGGDmiGlOSIYmBuIHqr">
+            <img class="mono" src="assets/icon_cloud_blue.svg" alt="" data-page-node-id="MlWF1GBYIGPIILjUg0odLb">
+            <span class="dev" data-page-node-id="XgyxWEkc4KTccRKXx6lwdR">Civia Cloud</span>
           </div>
-          <span class="time" data-i18n="time.justNow">Just now</span>
+          <span class="time" data-i18n="time.justNow" data-page-node-id="lmTMEzjvgeubxVrNcEhwMz">Just now</span>
         </div>
       </div>
 
-      <div class="notify-card offline" data-read="read" data-msg="tank">
-        <div class="head">
-          <div class="title" data-i18n="nc.tank.title">Primer design validation completed</div>
-          <div class="sub" data-i18n="nc.tank.sub">Genomics · Click to view t...</div>
+      <div class="notify-card offline" data-read="read" data-msg="tank" data-page-node-id="q2IhyjY1ZDhXxXOiI5mY08">
+        <div class="head" data-page-node-id="oq0x5DzKFuFWuHWJaI4dA7">
+          <div class="title" data-i18n="nc.tank.title" data-page-node-id="0M19DMhv1JnKTS9qDprZ9S">Primer design validation completed</div>
+          <div class="sub" data-i18n="nc.tank.sub" data-page-node-id="wVAHFLU4qlMbZ1xEtP20LA">Genomics · Click to view t...</div>
         </div>
-        <div class="meta">
-          <div class="meta-left">
-            <img class="mono" src="assets/icon_win_gray.svg" alt="">
-            <span class="dev" data-i18n="dev.biolab">Bioinfo Workstation</span>
-            <img class="dot" src="assets/status_gray.svg" alt="">
-            <span class="state" data-i18n="state.offline">Offline</span>
+        <div class="meta" data-page-node-id="4s0VjxsTHUeekXT1BVH7H5">
+          <div class="meta-left" data-page-node-id="SE8iAfUCM2uVpDvBdPATYv">
+            <img class="mono" src="assets/icon_win_gray.svg" alt="" data-page-node-id="GpK5kZbRSdv0penvhKHJIq">
+            <span class="dev" data-i18n="dev.biolab" data-page-node-id="AhSo3BNaYn6COMEd6LgSFv">Bioinfo Workstation</span>
+            <img class="dot" src="assets/status_gray.svg" alt="" data-page-node-id="CzKJ53L11HvGONMkmKWDrH">
+            <span class="state" data-i18n="state.offline" data-page-node-id="kprfZqokhn6h62h38yUKW5">Offline</span>
           </div>
-          <span class="time" data-i18n="time.12m">12m ago</span>
+          <span class="time" data-i18n="time.12m" data-page-node-id="8Bch2FnkAIlrtXwaNnFcAM">12m ago</span>
         </div>
       </div>
 
-      <div class="notify-card unread" data-read="unread" data-msg="one">
-        <div class="head">
-          <div class="title" data-i18n="nc.one.title">BRCA1 dataset selection pending confir...</div>
-          <div class="sub" data-i18n="nc.life.sub">Life Science Research · Markdown and citati...</div>
+      <div class="notify-card unread" data-read="unread" data-msg="one" data-page-node-id="YbW6F7tEBjnMojDUfl7mC7">
+        <div class="head" data-page-node-id="1XTA3nTXE76ZWroMfApG0V">
+          <div class="title" data-i18n="nc.one.title" data-page-node-id="1T0jQRLEU55T2gSt6jaPLr">BRCA1 dataset selection pending confir...</div>
+          <div class="sub" data-i18n="nc.life.sub" data-page-node-id="bZFdEk3RqqL3qnTX3QIY3o">Life Science Research · Markdown and citati...</div>
         </div>
-        <div class="meta">
-          <div class="meta-left">
-            <img class="mono" src="assets/icon_mac_sm.svg" alt="">
-            <span class="dev" data-i18n="chat.device">GL's Mac mini</span>
-            <img class="dot" src="assets/status_green.svg" alt="">
-            <span class="state" data-i18n="state.online">Online</span>
+        <div class="meta" data-page-node-id="06PLZVxEMwu7ey09U8iqVh">
+          <div class="meta-left" data-page-node-id="duPVaMmwMLcNfYO82b3Shw">
+            <img class="mono" src="assets/icon_mac_sm.svg" alt="" data-page-node-id="khoHzJdC6bBY47EhtGGUne">
+            <span class="dev" data-i18n="chat.device" data-page-node-id="E91mf0ZkPPYrvVXA8TEaJo">GL's Mac mini</span>
+            <img class="dot" src="assets/status_green.svg" alt="" data-page-node-id="8jnBGvPrmVhs2585Nz6FWX">
+            <span class="state" data-i18n="state.online" data-page-node-id="YGY4dZa09zxj1lhAA0QBl5">Online</span>
           </div>
-          <span class="time" data-i18n="time.24m">24m ago</span>
+          <span class="time" data-i18n="time.24m" data-page-node-id="mstpiqjOelxXisSftb1Jh0">24m ago</span>
         </div>
       </div>
 
-      <div class="notify-card unread" data-read="unread" data-msg="cohort">
-        <div class="head">
-          <div class="title" data-i18n="nc.cohort.title">TCGA-BRCA cohort sync completed</div>
-          <div class="sub" data-i18n="nc.cohort.sub">Genomics · 1,097 samples ready for analys...</div>
+      <div class="notify-card unread" data-read="unread" data-msg="cohort" data-page-node-id="Slgo2WIfCHcbyvMAKIaqEJ">
+        <div class="head" data-page-node-id="e9wUXDn1ng9p1wehHuN8TP">
+          <div class="title" data-i18n="nc.cohort.title" data-page-node-id="dU3fYUjrO8ozK9SB0I9lJk">TCGA-BRCA cohort sync completed</div>
+          <div class="sub" data-i18n="nc.cohort.sub" data-page-node-id="tQIcWqh5NUE1F622PCjltT">Genomics · 1,097 samples ready for analys...</div>
         </div>
-        <div class="meta">
-          <div class="meta-left">
-            <img class="mono" src="assets/icon_mac_sm.svg" alt="">
-            <span class="dev" data-i18n="chat.device">GL's Mac mini</span>
-            <img class="dot" src="assets/status_green.svg" alt="">
-            <span class="state" data-i18n="state.online">Online</span>
+        <div class="meta" data-page-node-id="QJU3bGCCkFFTbr1rzC34Hq">
+          <div class="meta-left" data-page-node-id="vGXXcgSXHKDgFG3J506PxT">
+            <img class="mono" src="assets/icon_mac_sm.svg" alt="" data-page-node-id="J12z9XkLOtpGXKn71HkpPG">
+            <span class="dev" data-i18n="chat.device" data-page-node-id="VDqCE8FkiASI3daJOtr27P">GL's Mac mini</span>
+            <img class="dot" src="assets/status_green.svg" alt="" data-page-node-id="p0PXdKLV3HzaiIB8ohIVz7">
+            <span class="state" data-i18n="state.online" data-page-node-id="TPyGn2d3j665c5ESOD3pC6">Online</span>
           </div>
-          <span class="time" data-i18n="time.12m">12m ago</span>
+          <span class="time" data-i18n="time.12m" data-page-node-id="1VTXPGUI3EjCTxGyojG2zC">12m ago</span>
         </div>
       </div>
 
-      <div class="notify-card read" data-read="read" data-msg="review">
-        <div class="head">
-          <div class="title" data-i18n="nc.review.title">Review outline organized</div>
-          <div class="sub" data-i18n="nc.review.sub">Literature and Research Review · You can co...</div>
+      <div class="notify-card read" data-read="read" data-msg="review" data-page-node-id="IWyImRTy81UteJfBEudvxR">
+        <div class="head" data-page-node-id="PVEdend6B1yQjEWgWcwRzw">
+          <div class="title" data-i18n="nc.review.title" data-page-node-id="brAjVa202joMQV1EY8OFki">Review outline organized</div>
+          <div class="sub" data-i18n="nc.review.sub" data-page-node-id="CL4tCmPUqYB3zsTbVXWt2D">Literature and Research Review · You can co...</div>
         </div>
-        <div class="meta">
-          <div class="meta-left">
-            <img class="mono" src="assets/icon_cloud_gray.svg" alt="">
-            <span class="dev">Civia Cloud</span>
+        <div class="meta" data-page-node-id="HgfDBgx9tubpZqn82ZqI6g">
+          <div class="meta-left" data-page-node-id="wZAZSoq2q0sP7JpdIg6Uft">
+            <img class="mono" src="assets/icon_cloud_gray.svg" alt="" data-page-node-id="TFuTB9TtDTti9HY10YKjD2">
+            <span class="dev" data-page-node-id="gS3BHobdSvLwigI4cDwLgg">Civia Cloud</span>
           </div>
-          <span class="time" data-i18n="time.1d">1d ago</span>
+          <span class="time" data-i18n="time.1d" data-page-node-id="MaXC4ZB6hEV0nJjp1KwtEu">1d ago</span>
         </div>
       </div>
 
-      <div class="notify-card read" data-read="read" data-msg="review">
-        <div class="head">
-          <div class="title" data-i18n="nc.review.title">Review outline organized</div>
-          <div class="sub" data-i18n="nc.review.sub">Literature and Research Review · You can co...</div>
+      <div class="notify-card read" data-read="read" data-msg="review" data-page-node-id="vBJaz76xAVw5zWkAW7xbZC">
+        <div class="head" data-page-node-id="032dt5u9IyuB1kXrlalTAE">
+          <div class="title" data-i18n="nc.review.title" data-page-node-id="1nwfNNfiPKEszQBgmyLHJE">Review outline organized</div>
+          <div class="sub" data-i18n="nc.review.sub" data-page-node-id="edax2gfP82I5ksTL863O6P">Literature and Research Review · You can co...</div>
         </div>
-        <div class="meta">
-          <div class="meta-left">
-            <img class="mono" src="assets/icon_cloud_blue.svg" alt="">
-            <span class="dev">Civia Cloud</span>
+        <div class="meta" data-page-node-id="6Ooz2blfXqTTRWsSr5A26S">
+          <div class="meta-left" data-page-node-id="Bsj5Y1ojitWO9fBRSM73WN">
+            <img class="mono" src="assets/icon_cloud_blue.svg" alt="" data-page-node-id="CphyevPK4satp2Ki2CQVi1">
+            <span class="dev" data-page-node-id="Mx8pO7slk3cJhnF0QpjGYt">Civia Cloud</span>
           </div>
-          <span class="time" data-i18n="time.1d">1d ago</span>
+          <span class="time" data-i18n="time.1d" data-page-node-id="IqsXc5CFqalhF0C3kr8Y9f">1d ago</span>
         </div>
       </div>
 
     </div>
 
-    <div class="notify-fade"></div>
+    <div class="notify-fade" data-page-node-id="aTYw0f5zaMD4wqq0xcEvmj"></div>
 
     <!-- Empty state -->
-    <div class="notify-empty">
-      <img src="assets/mxj_no_message.png" alt="">
-      <div class="txt" data-i18n="notify.empty">No new notifications</div>
+    <div class="notify-empty" data-page-node-id="v1btOjOIg3EGF5nwJn3aGu">
+      <img src="assets/mxj_no_message.png" alt="" data-page-node-id="NPrSAJYT8ZFAzDBn55xjZ3">
+      <div class="txt" data-i18n="notify.empty" data-page-node-id="Y2GzWY8vEnJxtwFtx6kyeH">No new notifications</div>
     </div>
 
   </div>
 
   <!-- ============ Connected Devices view ============ -->
-  <div class="devices-view">
+  <div class="devices-view" data-page-node-id="nNtH6Rp3m5vb52HQwCGbmu">
 
-    <div class="dev-header">
-      <button class="icon-btn" id="dev-back" aria-label="Back">
-        <img class="mono" src="assets/icon_back.svg" alt="">
+    <div class="dev-header" data-page-node-id="7PeKV3PoHCzcbIQxhwdbI2">
+      <button class="icon-btn" id="dev-back" aria-label="Back" data-page-node-id="gmaxpRwghXbVWA7NV95pV8">
+        <img class="mono" src="assets/icon_back.svg" alt="" data-page-node-id="HEqIXDb1YjGBFeEjW8Y6gY">
       </button>
-      <div class="t-title" data-i18n="dev.title">Connected Devices</div>
-      <button class="icon-btn" id="dev-add" aria-label="Add device">
-        <img class="mono" src="assets/icon_add.svg" alt="">
+      <div class="t-title" data-i18n="dev.title" data-page-node-id="Y3DuuDjzznblpSuij3BqEd">Connected Devices</div>
+      <button class="icon-btn" id="dev-add" aria-label="Add device" data-page-node-id="utuWEQXa8tGcCeVXkyQxLo">
+        <img class="mono" src="assets/icon_add.svg" alt="" data-page-node-id="oZlDZNYXeLG06qJZiVBb7J">
       </button>
     </div>
 
-    <div class="dev-list" id="dev-list"><!-- rendered by JS --></div>
+    <div class="dev-list" id="dev-list" data-page-node-id="fsMic0fWiH1BWrk5JlzYzk"><!-- rendered by JS --></div>
 
     <!-- Empty state -->
-    <div class="dev-empty">
-      <div class="icon3d"><img src="assets/mxj_no_device.png" alt=""></div>
-      <div class="txt" data-i18n="dev.empty">No new notifications</div>
+    <div class="dev-empty" data-page-node-id="GuGU7RvwFRmC5aQVJiJ9Yh">
+      <div class="icon3d" data-page-node-id="9qDJjkidDQx4gC23HHQqVC"><img src="assets/mxj_no_device.png" alt="" data-page-node-id="wwuqi7bdRiG4USyBUI4Sl1"></div>
+      <div class="txt" data-i18n="dev.empty" data-page-node-id="CAGtG979UiXInGc6EiFrRm">No new notifications</div>
     </div>
 
   </div>
 
   <!-- ============ Add Device view ============ -->
-  <div class="adddev-view">
+  <div class="adddev-view" data-page-node-id="Gh9cRtAPIT34DZlNFqkaLw">
 
-    <div class="dev-header">
-      <button class="icon-btn" id="adddev-back" aria-label="Back">
-        <img class="mono" src="assets/icon_back.svg" alt="">
+    <div class="dev-header" data-page-node-id="Gk6o1KIydhKa3C2HHpSVS1">
+      <button class="icon-btn" id="adddev-back" aria-label="Back" data-page-node-id="cqioIKSAxXZajD4WrHmnqc">
+        <img class="mono" src="assets/icon_back.svg" alt="" data-page-node-id="qZt7qYpcDpSJrVWzAoWjDj">
       </button>
-      <div class="t-title" data-i18n="adddev.title">Add Device</div>
+      <div class="t-title" data-i18n="adddev.title" data-page-node-id="mfT9oDqwT1kfibx98EdlYU">Add Device</div>
     </div>
 
     <!-- Searching state -->
-    <div class="adddev-search">
-      <div class="adddev-find">
-        <img src="assets/icon_find.png" alt="">
+    <div class="adddev-search" data-page-node-id="DvA5DCbhbxG8fVO2Jcpri9">
+      <div class="adddev-find" data-page-node-id="XNG5dWMCzdBBM2G0E96aOA">
+        <img src="assets/icon_find.png" alt="" data-page-node-id="3u8O6V7gq3YDftqEGB1X0D">
       </div>
-      <div class="txt" data-i18n-html="adddev.searching">Looking for devices<br>on the same account...</div>
+      <div class="txt" data-i18n-html="adddev.searching" data-page-node-id="wmetnxhg0oj1QxLWBPsFyg">Looking for devices<br data-page-node-id="Mt5bznscCLKTssCTmxx3Y0">on the same account...</div>
     </div>
 
     <!-- Found devices -->
-    <div class="dev-list" id="adddev-list"><!-- rendered by JS --></div>
+    <div class="dev-list" id="adddev-list" data-page-node-id="eG1Qs0gbNrSvmEGNsfk8MH"><!-- rendered by JS --></div>
 
   </div>
 
   <!-- ============ Confirm dialog: disable status indicator ============ -->
-  <div class="me-alert-mask status">
-    <div class="me-alert status">
-      <div class="msg" data-i18n="alert.statusMsg">Turning this off will prevent you from receiving important notifications. We recommend keeping it on.</div>
-      <div class="btns">
-        <button class="btn-cancel" id="alert-status-cancel" data-i18n="pf.cancel">Cancel</button>
-        <button class="btn-danger" id="alert-status-close" data-i18n="alert.close">Close</button>
+  <div class="me-alert-mask status" data-page-node-id="A4HxWp2gnxM7Do4uSbfN4f">
+    <div class="me-alert status" data-page-node-id="L9SGwBShrbSPp5Kaf7H7kG">
+      <div class="msg" data-i18n="alert.statusMsg" data-page-node-id="xBXG9qydGUJEFn2FDGwumt">Turning this off will prevent you from receiving important notifications. We recommend keeping it on.</div>
+      <div class="btns" data-page-node-id="cfevRqAts6N99E59yBe3F3">
+        <button class="btn-cancel" id="alert-status-cancel" data-i18n="pf.cancel" data-page-node-id="sLGWekJAXjlcAa9e7TtQTD">Cancel</button>
+        <button class="btn-danger" id="alert-status-close" data-i18n="alert.close" data-page-node-id="5TeyytCrrrIn3M4XLATenx">Close</button>
       </div>
     </div>
   </div>
 
   <!-- ============ Confirm dialog: log out ============ -->
-  <div class="me-alert-mask logout">
-    <div class="me-alert logout">
-      <div class="head">
-        <div class="t" data-i18n="alert.logoutTitle">Log Out?</div>
-        <div class="s" data-i18n="alert.logoutSub">Are you sure you want to log out?</div>
+  <div class="me-alert-mask logout" data-page-node-id="qZHXIIkHxJsSRINC3Ql3VU">
+    <div class="me-alert logout" data-page-node-id="zQ5M8Z7GeW3P9pNCjn8eXE">
+      <div class="head" data-page-node-id="brAsM2AcbxNCbTABFUjthK">
+        <div class="t" data-i18n="alert.logoutTitle" data-page-node-id="D1gtb98tF6h7fxLtaxyDkI">Log Out?</div>
+        <div class="s" data-i18n="alert.logoutSub" data-page-node-id="i9uPvklGHSME5yfBH8wODZ">Are you sure you want to log out?</div>
       </div>
-      <div class="btns">
-        <button class="btn-cancel" id="alert-logout-cancel" data-i18n="pf.cancel">Cancel</button>
-        <button class="btn-danger" id="alert-logout-ok" data-i18n="me.logout">Log Out</button>
+      <div class="btns" data-page-node-id="ulDkHdEE1MEaNzdNqVxZhZ">
+        <button class="btn-cancel" id="alert-logout-cancel" data-i18n="pf.cancel" data-page-node-id="Ks5j3OrYPPRmjnPvLSXyAI">Cancel</button>
+        <button class="btn-danger" id="alert-logout-ok" data-i18n="me.logout" data-page-node-id="j43yl0BR3S3VvdxHpPOkED">Log Out</button>
       </div>
     </div>
   </div>
 
   <!-- ============ Bottom sheet: Language ============ -->
-  <div class="bsheet-scrim" id="bsheet-scrim"></div>
-  <div class="bsheet" id="bsheet-language">
-    <div class="bs-head">
-      <div class="t" data-i18n="sheet.language">Language</div>
-      <button data-close aria-label="Close"><img class="mono" src="assets/icon_close.svg" alt=""></button>
+  <div class="bsheet-scrim" id="bsheet-scrim" data-page-node-id="rdvnXN6SJIso2mFKpUww0R"></div>
+  <div class="bsheet" id="bsheet-language" data-page-node-id="ZjiKDtrPaBx2xfqxPIsc2s">
+    <div class="bs-head" data-page-node-id="PzBiwdVrDK1dFiVgFyarfn">
+      <div class="t" data-i18n="sheet.language" data-page-node-id="ODPL0961uBZFV8BVaKP8MU">Language</div>
+      <button data-close aria-label="Close" data-page-node-id="80Pe58Z0R0HeQncxtytIvB"><img class="mono" src="assets/icon_close.svg" alt="" data-page-node-id="S4fWPWnW1OCHjIx4G1qFMb"></button>
     </div>
-    <div class="bs-rows">
-      <button class="bs-row" data-lang="system">
-        <div class="l"><img class="mono" src="assets/icon_lang_auto.svg" alt=""><span data-i18n="lang.system">Follow System</span></div>
-        <img class="mono ck" src="assets/icon_check.svg" alt="">
+    <div class="bs-rows" data-page-node-id="DtzlcUy3qNNQwnW6HCgVRJ">
+      <button class="bs-row" data-lang="system" data-page-node-id="Hl6tzuAu6vLBspzg9IlvTu">
+        <div class="l" data-page-node-id="2kea91shjfhXa9lFkdIhCQ"><img class="mono" src="assets/icon_lang_auto.svg" alt="" data-page-node-id="hSzIqNHES01XJuyM98jkDD"><span data-i18n="lang.system" data-page-node-id="xmQhWx1pKZqlL8xAesoiot">Follow System</span></div>
+        <img class="mono ck" src="assets/icon_check.svg" alt="" data-page-node-id="CtJtOTIMNZ7bs5YKKgFo8H">
       </button>
-      <button class="bs-row" data-lang="zh">
-        <div class="l"><img class="mono" src="assets/icon_lang_cn.svg" alt=""><span>中文</span></div>
-        <img class="mono ck" src="assets/icon_check.svg" alt="">
+      <button class="bs-row" data-lang="zh" data-page-node-id="BoWBe8oHANKDimPJSC4YC5">
+        <div class="l" data-page-node-id="t14hFjgOBt7bfr48TRSx2M"><img class="mono" src="assets/icon_lang_cn.svg" alt="" data-page-node-id="MjqyFzUg6Fdjw6P4rjnLvM"><span data-page-node-id="UXkKITfjEejhXzQJOjacPG">中文</span></div>
+        <img class="mono ck" src="assets/icon_check.svg" alt="" data-page-node-id="II3SPD88bf0zAFFyvkQZYO">
       </button>
-      <button class="bs-row" data-lang="en">
-        <div class="l"><img class="mono" src="assets/icon_lang_en.svg" alt=""><span>English</span></div>
-        <img class="mono ck" src="assets/icon_check.svg" alt="">
+      <button class="bs-row" data-lang="en" data-page-node-id="TunaNB9AD6g9V7DqccA9JR">
+        <div class="l" data-page-node-id="pFtC6bMGQzfCGBA8BUrnYd"><img class="mono" src="assets/icon_lang_en.svg" alt="" data-page-node-id="6GdVB0Bv2WC0nznFe986E7"><span data-page-node-id="x5PJ4UeBO2XMeRxZuQrWDL">English</span></div>
+        <img class="mono ck" src="assets/icon_check.svg" alt="" data-page-node-id="f4TuxCvEP3mOMY1Alrhjjv">
       </button>
     </div>
   </div>
 
   <!-- ============ Bottom sheet: Appearance ============ -->
-  <div class="bsheet" id="bsheet-appearance">
-    <div class="bs-head">
-      <div class="t" data-i18n="sheet.appearance">Appearance</div>
-      <button data-close aria-label="Close"><img class="mono" src="assets/icon_close.svg" alt=""></button>
+  <div class="bsheet" id="bsheet-appearance" data-page-node-id="DqqydpNtIVNX04jmVbi27L">
+    <div class="bs-head" data-page-node-id="kFOY4lufbJ7u3UPNH63oKZ">
+      <div class="t" data-i18n="sheet.appearance" data-page-node-id="VrxEfcJyOlDvgP7CDXTw5P">Appearance</div>
+      <button data-close aria-label="Close" data-page-node-id="ewZYZF1zNztTwIAKcd5hN2"><img class="mono" src="assets/icon_close.svg" alt="" data-page-node-id="AUl5Y1pKTPTDEBIhkCkf5d"></button>
     </div>
-    <div class="bs-rows">
-      <button class="bs-row" data-theme="system">
-        <div class="l"><img class="mono" src="assets/icon_lang_auto.svg" alt=""><span data-i18n="theme.system">Follow System</span></div>
-        <img class="mono ck" src="assets/icon_check.svg" alt="">
+    <div class="bs-rows" data-page-node-id="PbQM9aCqA1LJ8UQD8I9ViT">
+      <button class="bs-row" data-theme="system" data-page-node-id="Hfrk8oYQFR6sgafcZTTvAi">
+        <div class="l" data-page-node-id="uXrQQyFVK2PqntOyD2nhuG"><img class="mono" src="assets/icon_lang_auto.svg" alt="" data-page-node-id="msMu37PT9fW1eqijzldyjB"><span data-i18n="theme.system" data-page-node-id="vc3dX0Zjl6zCuqL9YO9UQT">Follow System</span></div>
+        <img class="mono ck" src="assets/icon_check.svg" alt="" data-page-node-id="qkZ7FIyENrKraXcDmD3eoQ">
       </button>
-      <button class="bs-row" data-theme="light">
-        <div class="l"><img class="mono" src="assets/icon_light.svg" alt=""><span data-i18n="theme.light">Light Mode</span></div>
-        <img class="mono ck" src="assets/icon_check.svg" alt="">
+      <button class="bs-row" data-theme="light" data-page-node-id="ONk6jQuFW3oXpDNLWsysDw">
+        <div class="l" data-page-node-id="vQLCAImATX0b6zELAzPhB9"><img class="mono" src="assets/icon_light.svg" alt="" data-page-node-id="HPHkcTTJZyHAT9NAuE2d7q"><span data-i18n="theme.light" data-page-node-id="LJtPeRPlsxCUKxeW0uqXSj">Light Mode</span></div>
+        <img class="mono ck" src="assets/icon_check.svg" alt="" data-page-node-id="Knfuv7Djkoiz5Ai2WAu3Y5">
       </button>
-      <button class="bs-row" data-theme="dark">
-        <div class="l"><img class="mono" src="assets/icon_dark.svg" alt=""><span data-i18n="theme.dark">Dark Mode</span></div>
-        <img class="mono ck" src="assets/icon_check.svg" alt="">
+      <button class="bs-row" data-theme="dark" data-page-node-id="Exyon8ewmJL6Pr9C67tJhr">
+        <div class="l" data-page-node-id="vVmPLymykgG1UhLxAr2NPE"><img class="mono" src="assets/icon_dark.svg" alt="" data-page-node-id="141YigyaH150V4jDKZqPLg"><span data-i18n="theme.dark" data-page-node-id="Yx2bQZltvT3SY28xH0XDrG">Dark Mode</span></div>
+        <img class="mono ck" src="assets/icon_check.svg" alt="" data-page-node-id="Al96KDtSwk0wVUNBLLiSnG">
       </button>
     </div>
   </div>
 
   <!-- ============ Global tab bar (shared by all views) ============ -->
-  <div class="app-tabbar tab-bar">
+  <div class="app-tabbar tab-bar" data-page-node-id="bg0l6j2ZDMqwvvESoiMwde">
     <!-- Both icon variants are present in the DOM and preloaded from the
          start; switching tabs only toggles visibility via CSS. Rewriting
          img.src on each switch used to re-fetch/decode the SVG, producing a
          blank frame (missing icon) on slow networks / real devices. -->
-    <button class="tab-item active" data-tab="civia">
-      <div class="stack">
-        <span class="ic-wrap">
-          <img class="mono ic-off" src="assets/icon_m_chat_tab.svg" alt="">
-          <img class="mono ic-on" src="assets/icon_m_chat2.svg" alt="">
+    <button class="tab-item active" data-tab="civia" data-page-node-id="BtMZjEPVh4mzjiJdPeOUbb">
+      <div class="stack" data-page-node-id="EXJItTiBddjKvXVOFMNfaT">
+        <span class="ic-wrap" data-page-node-id="VddC7mfV6vOuEpJF0bvKJ9">
+          <img class="mono ic-off" src="assets/icon_m_chat_tab.svg" alt="" data-page-node-id="93JwAjvEY77zQMOyeFsN6p">
+          <img class="mono ic-on" src="assets/icon_m_chat2.svg" alt="" data-page-node-id="OfwmLPptmCNFF19DMK9FDi">
         </span>
-        <div class="label">Civia</div>
+        <div class="label" data-page-node-id="g7JjEOx5fJ5DyIGTUwBkwb">Civia</div>
       </div>
     </button>
-    <button class="tab-item" data-tab="task">
-      <div class="stack">
-        <span class="ic-wrap">
-          <img class="mono ic-off" src="assets/icon_m_task1.svg" alt="">
-          <img class="mono ic-on" src="assets/icon_m_task2.svg" alt="">
+    <button class="tab-item" data-tab="task" data-page-node-id="k8dzC03QTVUnfdF78Uy2Lo">
+      <div class="stack" data-page-node-id="6K5gOfnAdmj8AN6FMyBDzz">
+        <span class="ic-wrap" data-page-node-id="H2TBVVwCbnj6NvqKsYjW3W">
+          <img class="mono ic-off" src="assets/icon_m_task1.svg" alt="" data-page-node-id="04969DD3ZFukdrMUkfMDiC">
+          <img class="mono ic-on" src="assets/icon_m_task2.svg" alt="" data-page-node-id="5OMlsF2f0pHtFBDJhDiO2O">
         </span>
-        <div class="label" data-i18n="tab.task">Task</div>
+        <div class="label" data-i18n="tab.task" data-page-node-id="Qb2eOFklpP9ztDgU4ZCKV4">Task</div>
       </div>
     </button>
-    <button class="tab-item" data-tab="discover">
-      <div class="stack">
-        <span class="ic-wrap">
-          <img class="mono ic-off" src="assets/icon_m_discover1.svg" alt="">
-          <img class="mono ic-on" src="assets/icon_m_discover2.svg" alt="">
+    <button class="tab-item" data-tab="discover" data-page-node-id="sjQVdezbCeKJFSrjKQSXGU">
+      <div class="stack" data-page-node-id="gQYqG769kI8YKaQHu9FSSK">
+        <span class="ic-wrap" data-page-node-id="K6EHQTu4hf1PkBZEGFbkVf">
+          <img class="mono ic-off" src="assets/icon_m_discover1.svg" alt="" data-page-node-id="5Bt85ES83o50SWraaFXNYV">
+          <img class="mono ic-on" src="assets/icon_m_discover2.svg" alt="" data-page-node-id="e1i5m8HYAl3J36rqVhaPB1">
         </span>
-        <div class="label" data-i18n="tab.discover">Discover</div>
+        <div class="label" data-i18n="tab.discover" data-page-node-id="VNn25W5HAp5LUMJQ8Ax1S8">Discover</div>
       </div>
     </button>
-    <button class="tab-item" data-tab="me">
-      <div class="stack">
-        <span class="ic-wrap">
-          <img class="mono ic-off" src="assets/icon_m_me1.svg" alt="">
-          <img class="mono ic-on" src="assets/icon_m_me2.svg" alt="">
+    <button class="tab-item" data-tab="me" data-page-node-id="ATRJOYU9bg2hFDxQAa2wfC">
+      <div class="stack" data-page-node-id="gUVMEHESs0LrjGYJOX8Mo0">
+        <span class="ic-wrap" data-page-node-id="Bwhydqyh8OES8PC985zMHT">
+          <img class="mono ic-off" src="assets/icon_m_me1.svg" alt="" data-page-node-id="vFf9LwH7LPsfbOgvzWvREw">
+          <img class="mono ic-on" src="assets/icon_m_me2.svg" alt="" data-page-node-id="l3dG7NqV0BM2CC5E4BoPzJ">
         </span>
-        <div class="label" data-i18n="tab.me">Me</div>
+        <div class="label" data-i18n="tab.me" data-page-node-id="sAoh453TtIDb8mk5AbMG6I">Me</div>
       </div>
     </button>
   </div>
@@ -4129,42 +4145,42 @@
   </div><!-- /page -->
 
   <!-- Sidebar drawer -->
-  <aside class="drawer">
-    <div class="drawer-inner">
+  <aside class="drawer" data-page-node-id="4CQsJdIvWXuYKJ6ak2TBrG">
+    <div class="drawer-inner" data-page-node-id="foH0P6ikj4d5TZIS90S2kt">
 
       <!-- Cloud header + New Task -->
-      <div class="sb-top">
-        <div class="sb-cloud" id="device-switcher">
-          <span class="only-cloud"><img class="mono cloud" src="assets/icon_cloud_big.svg" alt=""></span>
-          <span class="only-device"><img class="mono micon" src="assets/icon_mac.svg" style="width:30px;height:30px" alt=""></span>
-          <span class="name" id="device-name">Civia Cloud</span>
-          <img class="mono expand" src="assets/icon_expand7.svg" alt="">
+      <div class="sb-top" data-page-node-id="xAMLZX89OcFcfvOcFpjdDI">
+        <div class="sb-cloud" id="device-switcher" data-page-node-id="jgZlPzXVJL9o03UJi9sVG3">
+          <span class="only-cloud" data-page-node-id="q3hSC5TvCsnfFC7187TOov"><img class="mono cloud" src="assets/icon_cloud_big.svg" alt="" data-page-node-id="s5RKrh5sAqN8fLw0CaEKdU"></span>
+          <span class="only-device" data-page-node-id="RALFUqByVqZY6KmYmXkbAc"><img class="mono micon" src="assets/icon_mac.svg" style="width:30px;height:30px" alt="" data-page-node-id="U86xGNMwDBby90vUAdhAta"></span>
+          <span class="name" id="device-name" data-page-node-id="zPFRHGkFaBH8BYxiNpPo0B">Civia Cloud</span>
+          <img class="mono expand" src="assets/icon_expand7.svg" alt="" data-page-node-id="kOrRD84JKmEvkeGqbFfBLm">
         </div>
-        <button class="new-task">
-          <img class="mono" src="assets/icon_m_chat1.svg" alt="">
-          <span data-i18n="drawer.newTask">New Task</span>
+        <button class="new-task" data-page-node-id="AwMidvG9nmK7q46pDG0YUZ">
+          <img class="mono" src="assets/icon_m_chat1.svg" alt="" data-page-node-id="t1ByaCO7yscBG7I83SwSMd">
+          <span data-i18n="drawer.newTask" data-page-node-id="Sxv6TEwtV7dEwHIkbx8hxo">New Task</span>
         </button>
       </div>
 
       <!-- Project group -->
-      <div class="sb-group">
-        <div class="sb-group-head">
-          <div class="left">
-            <span class="label" id="drawer-group-label" data-i18n="drawer.project">Project</span>
-            <img class="mono" src="assets/icon_expand1.svg" alt="">
+      <div class="sb-group" data-page-node-id="q4UtBVL0q2gFKnPBNAFFrm">
+        <div class="sb-group-head" data-page-node-id="7YYkPUJL9gYqX8z9YDckNA">
+          <div class="left" data-page-node-id="83Kd2Xq1OKSDpgYdTHmCa4">
+            <span class="label" id="drawer-group-label" data-i18n="drawer.project" data-page-node-id="Gqo9vthJAShElicFwqB3Zy">Project</span>
+            <img class="mono" src="assets/icon_expand1.svg" alt="" data-page-node-id="VEZgvwq1A8taUAi2Ge3ftO">
           </div>
-          <img class="mono add" id="pj-add-btn" src="assets/icon_add_sm.svg" alt="Add project">
+          <img class="mono add" id="pj-add-btn" src="assets/icon_add_sm.svg" alt="Add project" data-page-node-id="iWVHFL6Pgzi9gxFouhzScx">
         </div>
-        <div class="sb-list">
-          <button class="sb-item medium project">
-            <img class="mono" src="assets/icon_folder2.svg" alt="">
-            <span class="txt">Proteomics</span>
-            <img class="mono pin" src="assets/icon_pin.svg" alt="">
+        <div class="sb-list" data-page-node-id="whJCVc6pAqbETGwL1PLF1W">
+          <button class="sb-item medium project" data-page-node-id="kBfmawdb7P2PzBksCL9odt">
+            <img class="mono" src="assets/icon_folder2.svg" alt="" data-page-node-id="G9qbn2cIZSc8kdDDpojI64">
+            <span class="txt" data-page-node-id="HK63rfElpJDvEP3UD5tOAR">Proteomics</span>
+            <img class="mono pin" src="assets/icon_pin.svg" alt="" data-page-node-id="og3pSN4JLsFF9RdO6VZARt">
           </button>
-          <button class="sb-item medium project">
-            <img class="mono" src="assets/icon_folder2.svg" alt="">
-            <span class="txt">Genomics&nbsp;</span>
-            <img class="mono pin" src="assets/icon_pin.svg" alt="">
+          <button class="sb-item medium project" data-page-node-id="ySlvDUMcCMs1XQjh4k6aZ9">
+            <img class="mono" src="assets/icon_folder2.svg" alt="" data-page-node-id="DGIx1wLmLMdQQXTAw0OlFg">
+            <span class="txt" data-page-node-id="bDFwVrZ2uWYPCMrZqYfkRf">Genomics&nbsp;</span>
+            <img class="mono pin" src="assets/icon_pin.svg" alt="" data-page-node-id="9UvH16JUYvbpPKJ2NqgaK4">
           </button>
         </div>
       </div>
@@ -4172,384 +4188,384 @@
       <!-- Pinned tasks group (Figma 2777:86080 / 3196:11427): appears only
            when at least one task is pinned; header is a plain gray "Pin"
            label, rows reuse the task row style. -->
-      <div class="sb-group" id="sb-pin-group" style="display: none;">
-        <div class="sb-group-head">
-          <div class="left">
-            <span class="label" data-i18n="drawer.pin">Pin</span>
+      <div class="sb-group" id="sb-pin-group" style="display: none;" data-page-node-id="4dpQpaFxZl62L3RiLCCbpJ">
+        <div class="sb-group-head" data-page-node-id="LfC1hDBtUCyKt38JGuXNF6">
+          <div class="left" data-page-node-id="meLEaCpblTMmHi4nckCtq2">
+            <span class="label" data-i18n="drawer.pin" data-page-node-id="pqtFsjKdrV5fwp77Cxwy9a">Pin</span>
           </div>
         </div>
-        <div class="sb-list" id="sb-pin-list"></div>
+        <div class="sb-list" id="sb-pin-list" data-page-node-id="Rabl4RETc9todP6Du13uvj"></div>
       </div>
 
       <!-- Task group -->
-      <div class="sb-group">
-        <div class="sb-group-head">
-          <div class="left">
-            <span class="label" data-i18n="drawer.task">Task</span>
-            <img class="mono" src="assets/icon_expand1.svg" alt="">
+      <div class="sb-group" data-page-node-id="e11P8YL4LsxX6cSOqBP00N">
+        <div class="sb-group-head" data-page-node-id="MqEFhErXpE2gzudzvlY4g1">
+          <div class="left" data-page-node-id="cwyIldyK9ENJPZF9x46K5H">
+            <span class="label" data-i18n="drawer.task" data-page-node-id="HS6DQ4QHqEJ03znifFTbHd">Task</span>
+            <img class="mono" src="assets/icon_expand1.svg" alt="" data-page-node-id="skeibakM7hMWwBw4zfvFyi">
           </div>
         </div>
-        <div class="sb-list">
-          <button class="sb-item active">
-            <span class="txt">Bulk RNA-seq Preprocessing</span>
-            <span class="sicon sm i-warn"></span>
+        <div class="sb-list" data-page-node-id="PS1qBXNQEICoGkJR2rVGtF">
+          <button class="sb-item active" data-page-node-id="I5gKBKqrB9SrPaItRfRQW3">
+            <span class="txt" data-page-node-id="Dg6fG19g1iaNR2UA3aKHz5">Bulk RNA-seq Preprocessing</span>
+            <span class="sicon sm i-warn" data-page-node-id="VFAikqZciWgC3qaIDKIjum"></span>
           </button>
-          <button class="sb-item">
-            <span class="txt">HER2 Domain II&nbsp;</span>
-            <span class="sicon sm i-load"></span>
+          <button class="sb-item" data-page-node-id="pADHFcSwV7JfJVFofRY55A">
+            <span class="txt" data-page-node-id="3Q1mxogPtYvy7De8Jl5nLS">HER2 Domain II&nbsp;</span>
+            <span class="sicon sm i-load" data-page-node-id="AO2aA8a1YsnhldwXh21vXd"></span>
           </button>
-          <button class="sb-item">
-            <span class="txt">Protein Structure Visualization&nbsp;</span>
+          <button class="sb-item" data-page-node-id="sY9axnCDbyg1lwlNg6ajtp">
+            <span class="txt" data-page-node-id="oehVCYGnJNjdbBDLSJU8ns">Protein Structure Visualization&nbsp;</span>
           </button>
-          <button class="sb-item">
-            <span class="txt">BRCA1 Variant Annotation</span>
+          <button class="sb-item" data-page-node-id="LqI4BRbK3Lp6Cm3an7z1Vs">
+            <span class="txt" data-page-node-id="zU2TcmPqpNVyr9msmTSEVe">BRCA1 Variant Annotation</span>
           </button>
-          <button class="sb-item">
-            <span class="txt">BMI-colorectal cancer MR ana...</span>
+          <button class="sb-item" data-page-node-id="Q4oYXosDGaXrsUJE6PRHaS">
+            <span class="txt" data-page-node-id="Ne3PfrqWvbSG7b3EaDo5L0">BMI-colorectal cancer MR ana...</span>
           </button>
-          <button class="sb-item">
-            <span class="txt">Colorectal Cancer and BMI: A Ne...</span>
+          <button class="sb-item" data-page-node-id="OFkxWv2CkfblCcsKxetfx9">
+            <span class="txt" data-page-node-id="T5BhLl6ibEleVyjBDg54Od">Colorectal Cancer and BMI: A Ne...</span>
           </button>
-          <button class="sb-item">
-            <span class="txt">Treating Colorectal Cancer: The ...</span>
+          <button class="sb-item" data-page-node-id="fBnYOFVFNZQoACnhiCnT5T">
+            <span class="txt" data-page-node-id="mZJda1gThPRTNulXtfjnab">Treating Colorectal Cancer: The ...</span>
           </button>
-          <button class="sb-item">
-            <span class="txt">BMI-colorectal cancer&nbsp;</span>
+          <button class="sb-item" data-page-node-id="VCFgcW6tDT0FM2SSI4iY0q">
+            <span class="txt" data-page-node-id="ZAr4TdtbBXeloe1GH6FrPF">BMI-colorectal cancer&nbsp;</span>
           </button>
-          <button class="sb-item medium">
-            <span class="txt">Understanding BMI's Impact on ...</span>
+          <button class="sb-item medium" data-page-node-id="P6Fr3NER2j7OoEBGZu4ONv">
+            <span class="txt" data-page-node-id="1zsPglmui4V0l2rzb31YBG">Understanding BMI's Impact on ...</span>
           </button>
-          <button class="sb-item">
-            <span class="txt">CRISPR Off-target Analysis</span>
-            <span class="sicon sm i-load"></span>
+          <button class="sb-item" data-page-node-id="pSzWGGRKMNQ9fLhxe4uvMi">
+            <span class="txt" data-page-node-id="VYnMxF46muUM1VGCPiSalY">CRISPR Off-target Analysis</span>
+            <span class="sicon sm i-load" data-page-node-id="Q43AIU0Rao2JvV9YUyuFql"></span>
           </button>
-          <button class="sb-item">
-            <span class="txt">Single-cell RNA-seq Clustering</span>
+          <button class="sb-item" data-page-node-id="1rXafewqRZvo88YkE3szV9">
+            <span class="txt" data-page-node-id="f8acfA2T9auAuF9goOohCA">Single-cell RNA-seq Clustering</span>
           </button>
-          <button class="sb-item">
-            <span class="txt">AlphaFold Structure Prediction</span>
-            <span class="sicon sm i-load"></span>
+          <button class="sb-item" data-page-node-id="0YCgkwX89vxZbFW6Ic7gXt">
+            <span class="txt" data-page-node-id="YxWKDPDDECJYGzaUFjHCgY">AlphaFold Structure Prediction</span>
+            <span class="sicon sm i-load" data-page-node-id="W315z8xPpl8gh5PduXs1tr"></span>
           </button>
-          <button class="sb-item">
-            <span class="txt">Gut Microbiome Diversity Report</span>
-            <span class="sicon sm i-warn"></span>
+          <button class="sb-item" data-page-node-id="vzpG62pHFHcP7vLduFUtTa">
+            <span class="txt" data-page-node-id="o8RaGh9piVhQthmQOGtbFS">Gut Microbiome Diversity Report</span>
+            <span class="sicon sm i-warn" data-page-node-id="9zvLgxn0NdSVkkaPk3vC3j"></span>
           </button>
-          <button class="sb-item">
-            <span class="txt">qPCR Primer Validation</span>
+          <button class="sb-item" data-page-node-id="Z9qH8mkRujejxAAIiallc2">
+            <span class="txt" data-page-node-id="YJHa8QKbh0KLAq4lZo8gjz">qPCR Primer Validation</span>
           </button>
         </div>
       </div>
 
     </div>
     <!-- Long-press action menu for project / task rows (Figma 3139:126925) -->
-    <div class="sb-lpmenu" id="sb-lpmenu">
-      <button class="m-item" id="lp-rename-btn">
-        <img class="mono" src="assets/icon_rename.svg" alt="">
-        <span class="lbl" data-i18n="pj.rename">Rename</span>
+    <div class="sb-lpmenu" id="sb-lpmenu" data-page-node-id="6powvO6My9fiXwoDq3RRXH">
+      <button class="m-item" id="lp-rename-btn" data-page-node-id="QWxBw5xU5zSV2PDFwFT0Pr">
+        <img class="mono" src="assets/icon_rename.svg" alt="" data-page-node-id="WlUTdKiUuzpWnGDL6xy9eA">
+        <span class="lbl" data-i18n="pj.rename" data-page-node-id="OWqTEmgdZ7yYQyONl7j4sZ">Rename</span>
       </button>
-      <button class="m-item" id="lp-pin-btn">
-        <img class="mono" id="lp-pin-icon" src="assets/icon_pin.svg" alt="">
-        <span class="lbl" id="lp-pin-lbl" data-i18n="pj.pin">Pin</span>
+      <button class="m-item" id="lp-pin-btn" data-page-node-id="pcUQ6niXtuvwdW7vJhNMXU">
+        <img class="mono" id="lp-pin-icon" src="assets/icon_pin.svg" alt="" data-page-node-id="Ru6PLHWyJFXynVQ9qS3oqC">
+        <span class="lbl" id="lp-pin-lbl" data-i18n="pj.pin" data-page-node-id="vjFEdAESTaY2B5vD4LhYIN">Pin</span>
       </button>
-      <button class="m-item" id="lp-move-btn">
-        <img class="mono" src="assets/icon_folder_move.svg" alt="">
-        <span class="lbl" data-i18n="lp.move">Move to Project</span>
+      <button class="m-item" id="lp-move-btn" data-page-node-id="D579bBJ4c0Tm1XUoNgO7mP">
+        <img class="mono" src="assets/icon_folder_move.svg" alt="" data-page-node-id="OBoY0Gn0DPpECFy65CLaf2">
+        <span class="lbl" data-i18n="lp.move" data-page-node-id="MV8gDtbhT4tKuLMYotgnwd">Move to Project</span>
       </button>
-      <button class="m-item danger" id="lp-delete-btn">
-        <img src="assets/icon_delete.svg" alt="">
-        <span class="lbl" data-i18n="pj.delete">Delete</span>
+      <button class="m-item danger" id="lp-delete-btn" data-page-node-id="UHc6cqfqG79TGCsBrlloTj">
+        <img src="assets/icon_delete.svg" alt="" data-page-node-id="GBltjZDUXlAqTk5xlLsZUv">
+        <span class="lbl" data-i18n="pj.delete" data-page-node-id="NDixPl56S7vO537yMEz4C5">Delete</span>
       </button>
     </div>
-    <div class="drawer-fade"></div>
+    <div class="drawer-fade" data-page-node-id="ktGKYrkrayTcbNUSd32gst"></div>
   </aside>
 
   <!-- Overlay over the exposed page edge -->
-  <div class="overlay" id="overlay"></div>
+  <div class="overlay" id="overlay" data-page-node-id="oH4pXGW04Y9tOFglkfFUQz"></div>
 
   <!-- Rename dialog (Figma 3122:161246) -->
-  <div class="rn-wrap" id="rn-wrap">
-    <div class="rn-scrim" id="rn-scrim"></div>
-    <div class="rn-dialog">
-      <div class="rn-title" data-i18n="rn.title">Rename</div>
-      <div class="rn-input">
-        <input id="rn-input" maxlength="30" autocomplete="off">
-        <button class="clear" id="rn-clear" aria-label="Clear">
-          <img class="mono" src="assets/icon_clear.svg" alt="">
+  <div class="rn-wrap" id="rn-wrap" data-page-node-id="Xql0zuBHDhQYeWgGAjBYkW">
+    <div class="rn-scrim" id="rn-scrim" data-page-node-id="bcbMXp81bTTI5Pva361Jq4"></div>
+    <div class="rn-dialog" data-page-node-id="iPOF9Ozqv5vP82nGqnVsj4">
+      <div class="rn-title" data-i18n="rn.title" data-page-node-id="tFYYF0MzN7P1lSm0yY4P27">Rename</div>
+      <div class="rn-input" data-page-node-id="wIfsCYb208ZYIvgxSGz5PQ">
+        <input id="rn-input" maxlength="30" autocomplete="off" data-page-node-id="LdAeqFRVzbExCxOKftTIXn">
+        <button class="clear" id="rn-clear" aria-label="Clear" data-page-node-id="cD6lELcS1SdrI4BLmnm2mE">
+          <img class="mono" src="assets/icon_clear.svg" alt="" data-page-node-id="tF4Za6lAbYTHVRCZfSRJaa">
         </button>
       </div>
-      <div class="rn-actions">
-        <button class="cancel" id="rn-cancel" data-i18n="rn.cancel">Cancel</button>
-        <button class="done" id="rn-done" data-i18n="rn.done">Done</button>
+      <div class="rn-actions" data-page-node-id="LPDFMOzED6WJ97GIlxxsFx">
+        <button class="cancel" id="rn-cancel" data-i18n="rn.cancel" data-page-node-id="OSl3pxJxgQpx0Okt6XQjiF">Cancel</button>
+        <button class="done" id="rn-done" data-i18n="rn.done" data-page-node-id="H5U9vSLX6KUGSBh15GMTeC">Done</button>
       </div>
     </div>
   </div>
 
   <!-- Center toast: pin / unpin feedback (Figma 3122:164513) -->
-  <div class="toast" id="toast">
-    <img src="assets/icon_check_ok.svg" alt="">
-    <span id="toast-txt">Pinned</span>
+  <div class="toast" id="toast" data-page-node-id="U8w7jnk8AFU93fHpsKevpI">
+    <img src="assets/icon_check_ok.svg" alt="" data-page-node-id="oVcQ1LV2L6IIicDDBbY0JP">
+    <span id="toast-txt" data-page-node-id="6IstgG9uWDQEFZSkUGDany">Pinned</span>
   </div>
 
   <!-- Device switch bottom sheet -->
-  <div class="sheet-scrim" id="sheet-scrim"></div>
-  <div class="sheet" id="device-sheet">
-    <div class="sheet-head">
-      <span class="title" data-i18n="sheet.switchDevice">Switch Device</span>
-      <button class="close" id="sheet-close" aria-label="Close">
-        <img class="mono" src="assets/icon_close.svg" alt="">
+  <div class="sheet-scrim" id="sheet-scrim" data-page-node-id="MQFGZzx7LIis6D2Lgt5Df4"></div>
+  <div class="sheet" id="device-sheet" data-page-node-id="yaIqgvitrcZWtoGD7yFTy0">
+    <div class="sheet-head" data-page-node-id="5B4c3IEg6tSmNC8hORjUxa">
+      <span class="title" data-i18n="sheet.switchDevice" data-page-node-id="lqp7TPKjzqeeCzGVjoTbSx">Switch Device</span>
+      <button class="close" id="sheet-close" aria-label="Close" data-page-node-id="NpHO9h1IT5Ne6nlnKOzPAX">
+        <img class="mono" src="assets/icon_close.svg" alt="" data-page-node-id="MII4mw9MaR9ZdbnpLRyIM4">
       </button>
     </div>
-    <div class="device-list" id="device-list">
-      <button class="device-row selected" data-device="Civia Cloud">
-        <div class="left">
-          <img class="mono dev-icon" src="assets/icon_cloud_sheet.svg" alt="">
-          <span class="dev-name" id="sheet-cloud-label" data-i18n="sheet.cloud">Civia Cloud</span>
+    <div class="device-list" id="device-list" data-page-node-id="a5BgLESB5mrVaQcwiom2ZK">
+      <button class="device-row selected" data-device="Civia Cloud" data-page-node-id="1taFOUAfMfI65rsBCpDWYQ">
+        <div class="left" data-page-node-id="HV6ANDW7bJIoVXy2NJyMBd">
+          <img class="mono dev-icon" src="assets/icon_cloud_sheet.svg" alt="" data-page-node-id="KRQh3gfwfaRthnGJ22ppwA">
+          <span class="dev-name" id="sheet-cloud-label" data-i18n="sheet.cloud" data-page-node-id="Eibg24gEhQWk9pH1JsJ6CD">Civia Cloud</span>
         </div>
-        <img class="mono check" src="assets/icon_check.svg" alt="">
+        <img class="mono check" src="assets/icon_check.svg" alt="" data-page-node-id="F3cRSF3AoCTFYW4gHmDHbn">
       </button>
-      <button class="device-row" data-device="MAC-MINI">
-        <div class="left">
-          <img class="mono dev-icon" src="assets/icon_mac.svg" alt="">
-          <span class="dev-name" data-i18n="chat.device">GL's Mac mini</span>
-          <img class="status" src="assets/status_green.svg" alt="">
-          <span class="state" data-i18n="state.online">Online</span>
+      <button class="device-row" data-device="MAC-MINI" data-page-node-id="aoMRYZbaDNtz0H2kLSPIvy">
+        <div class="left" data-page-node-id="GGYGeEo9Vdds6K8naSltdC">
+          <img class="mono dev-icon" src="assets/icon_mac.svg" alt="" data-page-node-id="w6Dve8WjCJ8jHSn520Ad2O">
+          <span class="dev-name" data-i18n="chat.device" data-page-node-id="GA9VYFw9Ft8X95Dz7c83GB">GL's Mac mini</span>
+          <img class="status" src="assets/status_green.svg" alt="" data-page-node-id="8ZPEqz5eaHkLj1RJnFy1KM">
+          <span class="state" data-i18n="state.online" data-page-node-id="HAWknvAHoAk4cdyKkCuFA0">Online</span>
         </div>
-        <img class="mono check" src="assets/icon_check.svg" alt="">
+        <img class="mono check" src="assets/icon_check.svg" alt="" data-page-node-id="hSVKrNEItEytnxeLr8FPMV">
       </button>
       <!-- Bioinfo Workstation is offline: 25%-black Windows glyph + gray dot,
            and the row is disabled — an offline device cannot be selected. -->
-      <button class="device-row disabled" data-device="BIOINFO-WS" disabled aria-disabled="true">
-        <div class="left">
-          <img class="mono dev-icon" src="assets/icon_win.svg" alt="">
-          <span class="dev-name" data-i18n="dev.biolab">Bioinfo Workstation</span>
-          <img class="status" src="assets/status_gray.svg" alt="">
-          <span class="state" data-i18n="state.offline">Offline</span>
+      <button class="device-row disabled" data-device="BIOINFO-WS" disabled aria-disabled="true" data-page-node-id="SoI56j6Mp2SB2l2wht943h">
+        <div class="left" data-page-node-id="bmXbCwW3ZlIV2AgmJnpkf4">
+          <img class="mono dev-icon" src="assets/icon_win.svg" alt="" data-page-node-id="ohbNfOLpfpOkFD9NqOkpjB">
+          <span class="dev-name" data-i18n="dev.biolab" data-page-node-id="GZtHjJHyeuTmk6p9Shfhft">Bioinfo Workstation</span>
+          <img class="status" src="assets/status_gray.svg" alt="" data-page-node-id="E5TLaN5fHCHmcWQvVOrwDd">
+          <span class="state" data-i18n="state.offline" data-page-node-id="b7QekBkh78gsJ8NdSLcV52">Offline</span>
         </div>
-        <img class="mono check" src="assets/icon_check.svg" alt="">
+        <img class="mono check" src="assets/icon_check.svg" alt="" data-page-node-id="c4ei3Tc3XpYomjHjVtjahZ">
       </button>
     </div>
   </div>
 
   <!-- Move-to-project bottom sheet (Figma 3191:138087) -->
-  <div class="sheet-scrim" id="mv-scrim"></div>
-  <div class="sheet mv-sheet" id="move-sheet">
-    <div class="sheet-head">
-      <span class="title" data-i18n="drawer.project">Project</span>
-      <button class="close" id="mv-close" aria-label="Close">
-        <img class="mono" src="assets/icon_close.svg" alt="">
+  <div class="sheet-scrim" id="mv-scrim" data-page-node-id="l6D3ya7aCUhyL68L0kBXqW"></div>
+  <div class="sheet mv-sheet" id="move-sheet" data-page-node-id="3SFffXRGPQUYC28coMGJRc">
+    <div class="sheet-head" data-page-node-id="Yr98DIdI471XurXVT6B3l1">
+      <span class="title" data-i18n="drawer.project" data-page-node-id="NroiRukpcUlFC1lSn3jwpl">Project</span>
+      <button class="close" id="mv-close" aria-label="Close" data-page-node-id="ptURZawxaucRYcjqcW0qzW">
+        <img class="mono" src="assets/icon_close.svg" alt="" data-page-node-id="NUbvHdxbv8euAnEaqqz2Ou">
       </button>
     </div>
-    <div class="mv-list" id="mv-list"></div>
-    <button class="mv-new" id="mv-new-btn">
-      <img class="mono" src="assets/icon_add.svg" alt="">
-      <span class="lbl" data-i18n="lp.new">New Project</span>
+    <div class="mv-list" id="mv-list" data-page-node-id="a67BJYncmj9gLG8fEkdceJ"></div>
+    <button class="mv-new" id="mv-new-btn" data-page-node-id="XlpSWKt0pDHuDLyS6VbJIj">
+      <img class="mono" src="assets/icon_add.svg" alt="" data-page-node-id="9v2XOMocQrVeqeFyEB3IwC">
+      <span class="lbl" data-i18n="lp.new" data-page-node-id="J69ACHTDPYZKuaCAS8MKma">New Project</span>
     </button>
   </div>
 
   <!-- New Project dialog (Figma 3192:138930) -->
-  <div class="np-wrap" id="np-wrap">
-    <div class="np-scrim" id="np-scrim"></div>
-    <div class="np-dialog">
-      <div class="np-title" data-i18n="lp.new">New Project</div>
-      <div class="rn-input" id="np-field">
-        <input id="np-input" maxlength="30" autocomplete="off" placeholder="Enter project name">
-        <button class="clear" id="np-clear" aria-label="Clear">
-          <img class="mono" src="assets/icon_clear.svg" alt="">
+  <div class="np-wrap" id="np-wrap" data-page-node-id="BDRWganDTytJDFqzzm908p">
+    <div class="np-scrim" id="np-scrim" data-page-node-id="OBoyhNqmKeoC2kFY7NgPBo"></div>
+    <div class="np-dialog" data-page-node-id="rbBKNUQv66fMGSkshOFGHC">
+      <div class="np-title" data-i18n="lp.new" data-page-node-id="EjFBtyEvjy707cPJoaAqrM">New Project</div>
+      <div class="rn-input" id="np-field" data-page-node-id="LvqGqHDf1DUVgvflst8LFy">
+        <input id="np-input" maxlength="30" autocomplete="off" placeholder="Enter project name" data-page-node-id="kplFu2mRRkX7byxa3OWj6N">
+        <button class="clear" id="np-clear" aria-label="Clear" data-page-node-id="FDdlsKTZIOJCmBydih0fmY">
+          <img class="mono" src="assets/icon_clear.svg" alt="" data-page-node-id="MwGqwlunWxYSUSv8Q5j8bH">
         </button>
       </div>
-      <div class="rn-actions">
-        <button class="cancel" id="np-cancel" data-i18n="rn.cancel">Cancel</button>
-        <button class="done disabled" id="np-done" data-i18n="rn.done">Done</button>
+      <div class="rn-actions" data-page-node-id="iS86tA9IiNlDiXjaA8yIz6">
+        <button class="cancel" id="np-cancel" data-i18n="rn.cancel" data-page-node-id="EqTcJdCAZT8w6ZdBKOJojT">Cancel</button>
+        <button class="done disabled" id="np-done" data-i18n="rn.done" data-page-node-id="1Jr72MyIPEFsAl8wZGYgLS">Done</button>
       </div>
     </div>
   </div>
 
   <!-- Attachment sheet (Figma 3206:139294 state 05): "+" expands
        Camera / Photos / Files cards + Resources / Connector rows -->
-  <div class="att-scrim" id="att-scrim"></div>
-  <div class="att-sheet" id="att-sheet">
-    <div class="att-grid">
-      <button class="att-btn" id="att-camera">
-        <img class="mono" src="assets/icon_camera.svg" alt="">
-        <span data-i18n="att.camera">Camera</span>
+  <div class="att-scrim" id="att-scrim" data-page-node-id="ITnJ87oNHsi0OQ9XVgEplT"></div>
+  <div class="att-sheet" id="att-sheet" data-page-node-id="2dUYTUCEYvncZRMmTERoQN">
+    <div class="att-grid" data-page-node-id="y2VLoqosIvOSGXzAfs1Fr0">
+      <button class="att-btn" id="att-camera" data-page-node-id="jq9ES8wmDgdX0m517oeB7N">
+        <img class="mono" src="assets/icon_camera.svg" alt="" data-page-node-id="o7b5Slg7nacFUAWaLpzJh8">
+        <span data-i18n="att.camera" data-page-node-id="qsvb9iwTtbh55IQ3rpqQg4">Camera</span>
       </button>
-      <button class="att-btn" id="att-photos">
-        <img class="mono" src="assets/icon_photos.svg" alt="">
-        <span data-i18n="att.photos">Photos</span>
+      <button class="att-btn" id="att-photos" data-page-node-id="KhBCMDEIpqNUuwGXgv6uI5">
+        <img class="mono" src="assets/icon_photos.svg" alt="" data-page-node-id="F7OAnRSwKESWSvb6xSgjof">
+        <span data-i18n="att.photos" data-page-node-id="HrE0qPNmxCphIpJGnzCYWG">Photos</span>
       </button>
-      <button class="att-btn" id="att-files">
-        <img class="mono" src="assets/icon_files.svg" alt="">
-        <span data-i18n="att.files">Files</span>
+      <button class="att-btn" id="att-files" data-page-node-id="z3OcJkQxEkAhVpkTMrWcm0">
+        <img class="mono" src="assets/icon_files.svg" alt="" data-page-node-id="f4cQ4cWgXrKRbrYG5gBEoH">
+        <span data-i18n="att.files" data-page-node-id="BZzY3ayxA1tcKkcD7uWN7h">Files</span>
       </button>
     </div>
-    <button class="att-row" id="att-resources">
-      <img class="mono" src="assets/icon_at.svg" alt="">
-      <span data-i18n="att.resources">Resources</span>
-      <img class="chev mono" src="assets/icon_expand13.svg" alt="">
+    <button class="att-row" id="att-resources" data-page-node-id="Nl9bwS7VJpRcwsE3l2RgEq">
+      <img class="mono" src="assets/icon_at.svg" alt="" data-page-node-id="veUP9Fsv6GjTksmv4Ar4BS">
+      <span data-i18n="att.resources" data-page-node-id="vYXhCK14lSMa9WJiHDfJuo">Resources</span>
+      <img class="chev mono" src="assets/icon_expand13.svg" alt="" data-page-node-id="Q4hoD3mgx8Ip6qS0cwZ3NP">
     </button>
-    <button class="att-row" id="att-connector">
-      <img class="mono" src="assets/icon_connector.svg" alt="">
-      <span data-i18n="att.connector">Connector</span>
-      <img class="chev mono" src="assets/icon_expand13.svg" alt="">
+    <button class="att-row" id="att-connector" data-page-node-id="jCDY8qn0XERMZQKz67lZec">
+      <img class="mono" src="assets/icon_connector.svg" alt="" data-page-node-id="HKi5Hr7mFcAAwaAc4fRxro">
+      <span data-i18n="att.connector" data-page-node-id="j310KikvX82lXAEWBaVoqf">Connector</span>
+      <img class="chev mono" src="assets/icon_expand13.svg" alt="" data-page-node-id="MUSp7RP3uShQaoGxWMcHTq">
     </button>
   </div>
 
   <!-- 05 Switch mode sheet: tapping the model chip in the composer toolbar
        (Figma 3206:139294 state 05). Selecting a row moves the check and
        updates the chip label. -->
-  <div class="mscrim" id="mscrim"></div>
-  <div class="mode-sheet" id="mode-sheet">
-    <div class="ms-head">
-      <span class="t" data-i18n="mode.title">Switch mode</span>
-      <img class="mono" id="mode-close" src="assets/icon_close.svg" alt="">
+  <div class="mscrim" id="mscrim" data-page-node-id="M7oKjDKttMBwv1osyYlPpc"></div>
+  <div class="mode-sheet" id="mode-sheet" data-page-node-id="I1g0Leyx4uT5PnGOJgeaaW">
+    <div class="ms-head" data-page-node-id="DeKXBZvTNgVbJ2KTmYzme5">
+      <span class="t" data-i18n="mode.title" data-page-node-id="S8uIvw10KESbjluEFiOHi3">Switch mode</span>
+      <img class="mono" id="mode-close" src="assets/icon_close.svg" alt="" data-page-node-id="fmAWn5dHgtmQqyBcW1DO8M">
     </div>
-    <div class="ms-row sel" data-mode="mode.default">
-      <div class="ms-name" data-i18n="mode.default">Default</div>
-      <div class="ms-desc" data-i18n="mode.d1">Asks you before performing any optional action.</div>
-      <img class="ms-check mono" src="assets/icon_check.svg" alt="">
+    <div class="ms-row sel" data-mode="mode.default" data-page-node-id="ymHBwkOQiNC0ja5R4jfp0T">
+      <div class="ms-name" data-i18n="mode.default" data-page-node-id="GX9FqS43HFTmodvp9Nqg5j">Default</div>
+      <div class="ms-desc" data-i18n="mode.d1" data-page-node-id="Gl8E9ElvVNdciJt12AzSrp">Asks you before performing any optional action.</div>
+      <img class="ms-check mono" src="assets/icon_check.svg" alt="" data-page-node-id="CVVDoq05wDcM5kYI5IyF3v">
     </div>
-    <div class="ms-row" data-mode="mode.smart">
-      <div class="ms-name" data-i18n="mode.smart">Smart Assist</div>
-      <div class="ms-desc" data-i18n="mode.d2">Auto-executes routine tasks to minimize interruptions.</div>
-      <img class="ms-check mono" src="assets/icon_check.svg" alt="">
+    <div class="ms-row" data-mode="mode.smart" data-page-node-id="75w9COQ7jUA8AGTfD4WRVk">
+      <div class="ms-name" data-i18n="mode.smart" data-page-node-id="UG4aEOWg8zJgQMtSea6AJ1">Smart Assist</div>
+      <div class="ms-desc" data-i18n="mode.d2" data-page-node-id="qAIk5x1DWcjYgFmN5JPfig">Auto-executes routine tasks to minimize interruptions.</div>
+      <img class="ms-check mono" src="assets/icon_check.svg" alt="" data-page-node-id="oMYZHiI3Eug2rlRYpaiiJL">
     </div>
   </div>
 
   <!-- 07 Resources sheet: tapping "Resources" in the attachment panel opens
        the resource picker (categories left, resource cards right). -->
-  <div class="res-sheet" id="res-sheet">
-    <div class="rs-head">
-      <span class="t" data-i18n="res.title">Resources</span>
-      <img class="mono" id="res-search-btn" src="assets/icon_search.svg" alt="">
-      <img class="mono" id="res-close" src="assets/icon_close.svg" alt="">
+  <div class="res-sheet" id="res-sheet" data-page-node-id="7ZCv3pzKrfmOFmqnQq6bRp">
+    <div class="rs-head" data-page-node-id="la0pVcY2AU3R4mUHdblYee">
+      <span class="t" data-i18n="res.title" data-page-node-id="Vwn86pjYpQOiLgAQsFWS31">Resources</span>
+      <img class="mono" id="res-search-btn" src="assets/icon_search.svg" alt="" data-page-node-id="cV4ZhvcB04QQcCaaRKOJRG">
+      <img class="mono" id="res-close" src="assets/icon_close.svg" alt="" data-page-node-id="8yqATr6aDYch298H4hYXLb">
     </div>
-    <div class="rs-body">
-      <div class="rs-tabs" id="rs-tabs">
-        <button class="rs-tab active" data-type="all" data-i18n="res.all">ALL</button>
-        <button class="rs-tab" data-type="knowledge" data-i18n="res.knowledge">Knowledge</button>
-        <button class="rs-tab" data-type="skills" data-i18n="res.skills">Skills</button>
-        <button class="rs-tab" data-type="models" data-i18n="res.models">Models</button>
+    <div class="rs-body" data-page-node-id="TboI7uz0rWzPI7UN7S20X1">
+      <div class="rs-tabs" id="rs-tabs" data-page-node-id="8Yfmtj90CW2vkxq37MernB">
+        <button class="rs-tab active" data-type="all" data-i18n="res.all" data-page-node-id="xsXHCTqaUl9ZtI2YLHH7pI">ALL</button>
+        <button class="rs-tab" data-type="knowledge" data-i18n="res.knowledge" data-page-node-id="nTTjQWA63ne4vaFZYOOSwo">Knowledge</button>
+        <button class="rs-tab" data-type="skills" data-i18n="res.skills" data-page-node-id="jVHkKe0u615TBoxxjCi50i">Skills</button>
+        <button class="rs-tab" data-type="models" data-i18n="res.models" data-page-node-id="EkuZCyL8gXJb7WToMsJehi">Models</button>
       </div>
-      <div class="rs-list" id="res-list"></div>
+      <div class="rs-list" id="res-list" data-page-node-id="eVYQnwwV0fDc6eakiHzJyf"></div>
     </div>
   </div>
 
   <!-- 11 Connector sheet: tapping "Connector" in the attachment panel opens
        the device picker. Row 1 toggled on (blue), row 2 disabled (gray),
        row 3 unavailable (orange + ban glyph), row 4 linked desktop. -->
-  <div class="conn-sheet" id="conn-sheet">
-    <div class="ms-head">
-      <span class="t" data-i18n="conn.title">Connector</span>
-      <img class="mono" id="conn-close" src="assets/icon_close.svg" alt="">
+  <div class="conn-sheet" id="conn-sheet" data-page-node-id="FPVamYcZ2DzhwZfnAWmv5q">
+    <div class="ms-head" data-page-node-id="Vx0e19fLD1aAZwgS5QgIy1">
+      <span class="t" data-i18n="conn.title" data-page-node-id="jncG7CXVo9aReGuJEMghWH">Connector</span>
+      <img class="mono" id="conn-close" src="assets/icon_close.svg" alt="" data-page-node-id="jsUP4o5UBKy7m9P77QG3XU">
     </div>
-    <div class="cs-row">
-      <span class="cs-name" data-i18n="chat.device">GL's Mac mini</span>
-      <span class="cs-toggle on"></span>
+    <div class="cs-row" data-page-node-id="X08dOenAVGcV4BmhO6KjIx">
+      <span class="cs-name" data-i18n="chat.device" data-page-node-id="kpS95FdB7klzPFJHk8U3gf">GL's Mac mini</span>
+      <span class="cs-toggle on" data-page-node-id="ePHUsVYkPn2CY8XwPMjGxG"></span>
     </div>
-    <div class="cs-row dis">
-      <span class="cs-name" data-i18n="dev.biolab">Bioinfo Workstation</span>
-      <span class="cs-toggle dis"></span>
+    <div class="cs-row dis" data-page-node-id="D71ztfpFtxAjmbLb7zi7DA">
+      <span class="cs-name" data-i18n="dev.biolab" data-page-node-id="wkw8ChWXsyGNjcOAvb8PhH">Bioinfo Workstation</span>
+      <span class="cs-toggle dis" data-page-node-id="XowrQTcnFC9GjL2Zfheszr"></span>
     </div>
-    <div class="cs-row unavail">
-      <span class="cs-name" data-i18n="dev.seqserver">Sequencing Server</span>
-      <svg class="cs-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="#ECA000" stroke-width="2"/><line x1="5.6" y1="5.6" x2="18.4" y2="18.4" stroke="#ECA000" stroke-width="2"/></svg>
+    <div class="cs-row unavail" data-page-node-id="bXQ0sk3hrpCZf7WDWVEzHg">
+      <span class="cs-name" data-i18n="dev.seqserver" data-page-node-id="me36LvisJowqHIruAnGhXD">Sequencing Server</span>
+      <svg class="cs-ban" viewBox="0 0 24 24" data-page-node-id="Ckjgfn20xE6Z42gNu6Cwqz"><circle cx="12" cy="12" r="9" fill="none" stroke="#ECA000" stroke-width="2" data-page-node-id="IBawpM5KdXQOaN5Kylbdml"/><line x1="5.6" y1="5.6" x2="18.4" y2="18.4" stroke="#ECA000" stroke-width="2" data-page-node-id="ImZqK9Am9m7nEykmfP8Coq"/></svg>
     </div>
-    <div class="cs-row">
-      <span class="cs-name" data-i18n="chat.device">GL's Mac mini</span>
-      <img class="mono" src="assets/icon_connector.svg" alt="">
+    <div class="cs-row" data-page-node-id="ossFdo4Cuh9WEVvpQ2ExSE">
+      <span class="cs-name" data-i18n="chat.device" data-page-node-id="YrCxqamOpjcWOSHLPMauV4">GL's Mac mini</span>
+      <img class="mono" src="assets/icon_connector.svg" alt="" data-page-node-id="CFYJh5HM1MX9PdtEWGt4cn">
     </div>
   </div>
 
   <!-- 18 Version details sheet: current vs. latest version, release notes,
        and the explicit Update button. Contents are rendered by JS from the
        OTA state (see verState below) — markup is structural only. -->
-  <div class="ver-sheet" id="ver-sheet">
-    <div class="ms-head">
-      <span class="t" data-i18n="ver.title">Version Details</span>
-      <img class="mono" id="ver-close" src="assets/icon_close.svg" alt="">
+  <div class="ver-sheet" id="ver-sheet" data-page-node-id="DdIF7OjQoSq1YxoOKA7ykC">
+    <div class="ms-head" data-page-node-id="CYZhdvEY3lNRohqgpyvxsm">
+      <span class="t" data-i18n="ver.title" data-page-node-id="Xf9HCfpzLDy9VxoKs61wZS">Version Details</span>
+      <img class="mono" id="ver-close" src="assets/icon_close.svg" alt="" data-page-node-id="h54jgmgwYrkE1gKPqDxz8I">
     </div>
-    <div class="ver-body" id="ver-body">
-      <div class="ver-card" id="ver-card-cur">
-        <div class="vb-main">
-          <div class="vb-label" data-i18n="ver.current">Current Version</div>
-          <div class="vb-val" id="ver-cur-val">v1.0.0</div>
+    <div class="ver-body" id="ver-body" data-page-node-id="AvrIAmEvFixrAZCgMzrIrE">
+      <div class="ver-card" id="ver-card-cur" data-page-node-id="ticLxuAvbu10VkgCgRbqMC">
+        <div class="vb-main" data-page-node-id="pSr3jsHpZ5ncOBWJUI2e4Y">
+          <div class="vb-label" data-i18n="ver.current" data-page-node-id="2BD9Rhr08q0JdvngvJ3fHI">Current Version</div>
+          <div class="vb-val" id="ver-cur-val" data-page-node-id="AxT5XffbCpTVQ9pN2DbH8H">v1.0.0</div>
         </div>
       </div>
-      <div class="ver-card" id="ver-card-lat">
-        <div class="vb-main">
-          <div class="vb-label" data-i18n="ver.latest">Latest Version</div>
-          <div class="vb-val" id="ver-lat-val">—</div>
-          <div class="vb-note" id="ver-lat-note">You're up to date</div>
+      <div class="ver-card" id="ver-card-lat" data-page-node-id="dvof3obvqBhSwN5K2S4IwW">
+        <div class="vb-main" data-page-node-id="VNU3ysHEpLXyU97lrZeIkj">
+          <div class="vb-label" data-i18n="ver.latest" data-page-node-id="KvkUs14KFdDZjnlM0q2n75">Latest Version</div>
+          <div class="vb-val" id="ver-lat-val" data-page-node-id="ophrxZH53y2KKpL8tCeGC1">—</div>
+          <div class="vb-note" id="ver-lat-note" data-page-node-id="tFoEEHVylaaQzm1ye8B4oy">You're up to date</div>
         </div>
-        <span class="ver-badge" data-i18n="ver.newAvailable">New version</span>
+        <span class="ver-badge" data-i18n="ver.newAvailable" data-page-node-id="ltFL4txNyohqV1WFWSh3Q2">New version</span>
       </div>
-      <button class="ver-update-btn" id="ver-update-btn" data-i18n="ver.update">Update Now</button>
-      <div class="ver-log">
-        <div class="vl-label" data-i18n="ver.changelog">Release Notes</div>
-        <div id="ver-log-list"></div>
+      <button class="ver-update-btn" id="ver-update-btn" data-i18n="ver.update" data-page-node-id="WOPbb3X2Azp02gK0t9DeEC">Update Now</button>
+      <div class="ver-log" data-page-node-id="KL8lxrhllt7Jwq6Ie4z12R">
+        <div class="vl-label" data-i18n="ver.changelog" data-page-node-id="GHSykH6JBc0EcVL0V0lw2v">Release Notes</div>
+        <div id="ver-log-list" data-page-node-id="qsiuuxWDLQvn6BFw3oGSOA"></div>
       </div>
     </div>
   </div>
 
   <!-- Persistent OTA progress bubble: shown while the bundle downloads.
      Real-time progress + an actionable Cancel (中断更新) entry. -->
-  <div class="ota-bubble" id="ota-bubble">
-    <div class="ob-top">
-      <div class="ob-spin" id="ob-spin"></div>
-      <span class="ob-txt" id="ob-txt">Updating…</span>
-      <button class="ob-cancel" id="ob-cancel" data-i18n="ota.cancel">Cancel</button>
+  <div class="ota-bubble" id="ota-bubble" data-page-node-id="S7PxutQ5TazHwnmumDPIPL">
+    <div class="ob-top" data-page-node-id="Gv6DkjIeXkgQfc6BuJAbiC">
+      <div class="ob-spin" id="ob-spin" data-page-node-id="7VvvU9QiDuKTbTmlMjHMPO"></div>
+      <span class="ob-txt" id="ob-txt" data-page-node-id="dDJyhCZqpWhPk3fa3wZQ2b">Updating…</span>
+      <button class="ob-cancel" id="ob-cancel" data-i18n="ota.cancel" data-page-node-id="NA2zi8SQp1n7kB7d9OQqnX">Cancel</button>
     </div>
-    <div class="ob-bar"><div class="ob-fill" id="ob-fill"></div></div>
+    <div class="ob-bar" data-page-node-id="DgtFJwpU9rLMgebTrozsUF"><div class="ob-fill" id="ob-fill" data-page-node-id="TCTky1WO8rrFtBBg1GbQ9K"></div></div>
   </div>
 
   <!-- 08-10 Resource search: full-screen page from the search icon in the
        Resources sheet; typing filters the demo resource list (empty state 09,
        hit state 10). -->
-  <div class="res-search" id="res-search">
-    <div class="rsr-bar">
-      <div class="rsr-pill">
-        <img class="mono" src="assets/icon_search.svg" alt="">
-        <input id="rsr-input" type="text" placeholder="Search Resources" autocomplete="off">
-        <button class="rsr-clear" id="rsr-clear" aria-label="Clear">
-          <img class="mono" src="assets/icon_clear.svg" alt="">
+  <div class="res-search" id="res-search" data-page-node-id="ZT5LBEVQslDtoFDDS8jAEZ">
+    <div class="rsr-bar" data-page-node-id="d2SV3Wlq30L2D3HjUS0Yxz">
+      <div class="rsr-pill" data-page-node-id="FBuSN0hBQxP203z1ri6WD5">
+        <img class="mono" src="assets/icon_search.svg" alt="" data-page-node-id="DAvMQ15cC6QdpgiK1cEDaY">
+        <input id="rsr-input" type="text" placeholder="Search Resources" autocomplete="off" data-page-node-id="CWntcPo08Un2ntimWDyuvI">
+        <button class="rsr-clear" id="rsr-clear" aria-label="Clear" data-page-node-id="dW2IH2zQu0uesvUhiJNRGj">
+          <img class="mono" src="assets/icon_clear.svg" alt="" data-page-node-id="lhRDAFKVTsWkS6hH3q9yHN">
         </button>
       </div>
-      <button class="rsr-cancel" id="rsr-cancel" data-i18n="search.cancel">Cancel</button>
+      <button class="rsr-cancel" id="rsr-cancel" data-i18n="search.cancel" data-page-node-id="o6brnaRBZxeAAi7z6uVXyB">Cancel</button>
     </div>
-    <div class="rsr-list" id="rsr-list"></div>
-    <div class="rsr-empty">
-      <img src="assets/mxj_no_resource.png" alt="">
-      <div class="txt" data-i18n="res.noresult">No resources found</div>
+    <div class="rsr-list" id="rsr-list" data-page-node-id="M86921bcWzMtkFHYUiijyA"></div>
+    <div class="rsr-empty" data-page-node-id="JfPCBK3LH9MNs9z6MeC1DG">
+      <img src="assets/mxj_no_resource.png" alt="" data-page-node-id="M3e4Feib3kiWbUsjQjHm36">
+      <div class="txt" data-i18n="res.noresult" data-page-node-id="SPhPhScKMRKoj5yUTMaJKa">No resources found</div>
     </div>
   </div>
 
   <!-- 13 Attachment preview: tapping an attachment card opens the full-page
        viewer (image renders directly; docs show a text view). -->
-  <div class="att-view" id="att-view">
-    <div class="av-bar">
-      <button class="av-back" id="av-back" aria-label="Back">
-        <img class="mono" src="assets/icon_back.svg" alt="">
+  <div class="att-view" id="att-view" data-page-node-id="yhkj7AGSjivr0MAZo5YCZy">
+    <div class="av-bar" data-page-node-id="mwUbDanuo0REgXVC8bSeyL">
+      <button class="av-back" id="av-back" aria-label="Back" data-page-node-id="2BpEEmTvtI8wz7Z5N54FZh">
+        <img class="mono" src="assets/icon_back.svg" alt="" data-page-node-id="C1jKoSBMWhLSUhalSUkmod">
       </button>
-      <div class="av-title" id="av-title"></div>
+      <div class="av-title" id="av-title" data-page-node-id="3yLEn0J0cC268WaHUXGOjC"></div>
     </div>
-    <div class="av-body" id="av-body"></div>
+    <div class="av-body" id="av-body" data-page-node-id="zweytADEsehK4JsCoCWONI"></div>
   </div>
 
   <!-- 14/15 Voice input: hold a voice icon to raise the gradient panel;
        slide up turns it red (cancel), release sends the recognized text. -->
-  <div class="voice-ov" id="voice-ov">
-    <div class="hint" data-i18n="voice.hint">Release to send, slide up to cancel.</div>
-    <div class="hint hint-cancel" data-i18n="voice.hint.cancel">Release to cancel input.</div>
-    <div class="voice-wave" id="voice-wave"></div>
+  <div class="voice-ov" id="voice-ov" data-page-node-id="juM2c9ECAfqHHB63YYDAd7">
+    <div class="hint" data-i18n="voice.hint" data-page-node-id="kvkd66Qz4T1LUCpGV37QQD">Release to send, slide up to cancel.</div>
+    <div class="hint hint-cancel" data-i18n="voice.hint.cancel" data-page-node-id="XniXoSlAFaAoAE6M97dlNv">Release to cancel input.</div>
+    <div class="voice-wave" id="voice-wave" data-page-node-id="cClFXKtWLUP7ui3AxZExIg"></div>
   </div>
 
   <!-- Simulated iOS keyboard (prototype): built by JS; types into the
        active target (#sch-input in search view, dialog inputs otherwise) -->
-  <div class="ios-kb" id="ios-kb"></div>
+  <div class="ios-kb" id="ios-kb" data-page-node-id="FSOkWbaTjQk0fkD80EVrKV"></div>
 
   <!-- Home indicator -->
-  <div class="home-indicator">
-    <div class="bar"></div>
+  <div class="home-indicator" data-page-node-id="cJ1mEX1FsshzCOA0Ts4lHF">
+    <div class="bar" data-page-node-id="2kmD1tRSWFfL3ruceR7gsN"></div>
   </div>
 
 </div>
@@ -7376,7 +7392,7 @@
   // ============ Android APK shell bridge ============
   // Only active in app mode, where the native shell injects window.CiviaNative.
   // Covers: (1) OTA hot update of the web bundle, (2) system back button.
-  const WEB_VERSION = '1.0.17';
+  const WEB_VERSION = '1.0.18';
   const UPDATE_URL = 'https://luact-nb.github.io/civia-ota/version.json';
 
   // "Me" page version row — shows the running bundle version in every mode;
