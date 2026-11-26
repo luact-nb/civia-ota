@@ -46,6 +46,9 @@ PY
 
 cd "$HERE/www" && rm -f "$HERE/web.zip" && zip -qr "$HERE/web.zip" index.html assets
 
+# Keep the public web preview (GitHub Pages /app/) in sync with the new bundle.
+rm -rf "$HERE/app" && cp -R "$HERE/www" "$HERE/app"
+
 NOTES="${3:-在线热更新}"
 
 # version.json now carries a "log" changelog (newest first). Previous entries
