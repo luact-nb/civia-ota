@@ -1766,10 +1766,6 @@
   }
   .chat-title-block .sub .dev { width: 14px; height: 14px; flex: 0 0 14px; opacity: 0.55; }
   .chat-title-block .sub .chev { width: 11px; height: 11px; flex: 0 0 11px; opacity: 0.5; }
-  .chat-title-block .sub .sep { margin: 0 2px; opacity: 0.5; }
-  .chat-title-block .sub .st-run { color: var(--tint-fg-blue); }
-  .chat-title-block .sub .st-done { color: var(--black-45); }
-  .chat-title-block .sub .st-warn { color: var(--tint-fg-warn); }
 
   /* Small popover opened by the header's "..." button. */
   .ch-menu {
@@ -3665,8 +3661,6 @@
           <img class="mono dev" src="assets/icon_mac_sm.svg" alt="" data-page-node-id="RbRQRLHH4VOc7ehi09o3RT">
           <span id="chat-device" data-page-node-id="3VGucu9zCas1nZm7rcg4Up">GL 的 Mac mini</span>
           <img class="mono chev" src="assets/icon_expand13.svg" alt="" data-page-node-id="DVGHwK4N0kyGXrdVyXazBx">
-          <span class="sep" data-page-node-id="9SbapOhFKDP0W5Ka716a0X">·</span>
-          <span id="chat-status" class="st-run" data-page-node-id="tksHiFcCcSqaQJE0So66Mn">In Progress</span>
         </div>
       </div>
       <div class="ch-capsule" data-page-node-id="j6vkAriVgyiFyzi25nX5Ac">
@@ -6693,7 +6687,6 @@
   const chatList = document.getElementById('chat-list');
   const chatScroll = document.querySelector('.chat-scroll');
   const chatTitleEl = document.getElementById('chat-title');
-  const chatStatusEl = document.getElementById('chat-status');
   const chatJumpEl = document.getElementById('chat-jump');
   let curChatTask = null, taskSeq = 0;
   // A drawer row carries its own status icon (warn/load/none). When it
@@ -6726,8 +6719,7 @@
   }
   const nextReply = () => t('chat.reply1');   // single canned reply for now
 
-  // Header subtitle shows the connected device (or the reference default),
-  // plus the task status and time — status stays local to this view.
+  // Header subtitle shows only the connected device.
   function updateChatDevice() {
     const el = document.getElementById('chat-device');
     if (el) el.textContent = currentDevice ? deviceLabel(currentDevice) : t('chat.device');
@@ -6735,10 +6727,6 @@
   function updateChatSub() {
     if (!curChatTask) return;
     const stt = chatViewStatus || curChatTask.status;
-    const cls = stt === 'run' ? 'st-run' : stt === 'warn' ? 'st-warn' : 'st-done';
-    const label = stt === 'run' ? t('chat.inprog') : stt === 'warn' ? t('chat.warn') : t('chat.done');
-    chatStatusEl.className = cls;
-    chatStatusEl.textContent = label;
     const menuBtn = document.getElementById('ch-menu-status');
     if (menuBtn) menuBtn.textContent = stt === 'done' ? t('chat.menu.reopen') : t('chat.menu.done');
   }
@@ -7533,7 +7521,7 @@
   // ============ Android APK shell bridge ============
   // Only active in app mode, where the native shell injects window.CiviaNative.
   // Covers: (1) OTA hot update of the web bundle, (2) system back button.
-  const WEB_VERSION = '1.0.31';
+  const WEB_VERSION = '1.0.32';
   const UPDATE_URL = 'https://luact-nb.github.io/civia-ota/version.json';
 
   // "Me" page version row — shows the running bundle version in every mode;
