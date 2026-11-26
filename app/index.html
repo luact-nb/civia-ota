@@ -203,7 +203,11 @@
     overflow: hidden;
     position: relative;
     flex-shrink: 0;
+    /* Search scroll/fade foot — 33 home-indicator, 252 simulated kb,
+       or live IME height via sysKbFloat() on app-mode. */
+    --sch-bottom: 33px;
   }
+  .phone.kb-open { --sch-bottom: 252px; }
 
   @media (max-width: 480px) {
     /* Keep the phone at its fixed 393x852 design size and let
@@ -1095,8 +1099,10 @@
   .drawer-fade {
     position: absolute;
     left: 0; right: 0; bottom: 0;
-    height: 48px;
-    background: linear-gradient(to bottom, transparent, var(--bg-base));
+    /* Taller solid-bottom ramp seals scale hairlines at the drawer foot
+       (same recipe as .task-fade; no chrome below to overlap into). */
+    height: calc(48px + var(--fade-tab-overlap));
+    background: linear-gradient(to bottom, var(--fade-start), var(--bg-base) 50%, var(--bg-base));
     z-index: 6;
     pointer-events: none;
   }
@@ -1646,10 +1652,13 @@
   }
 
   .pj-fade {
+    /* Same clean solid-bottom ramp as .task-fade: overlap the composer dock
+       (scroll/fade meet at 174) so scale() can't open a hairline for card titles. */
     position: absolute;
-    left: 0; right: 0; bottom: 174px;
-    height: 48px;
-    background: linear-gradient(to bottom, transparent, var(--bg-base));
+    left: 0; right: 0;
+    bottom: calc(174px - var(--fade-tab-overlap));
+    height: calc(48px + var(--fade-tab-overlap));
+    background: linear-gradient(to bottom, var(--fade-start), var(--bg-base) 50%, var(--bg-base));
     z-index: 2;
     pointer-events: none;
   }
@@ -1666,6 +1675,18 @@
     left: 16px;
     bottom: 98px;
     z-index: 1;
+  }
+  /* Full-bleed opaque seal under .pj-fade — composer itself is inset 16px
+     and cannot cover a center hairline on its own. */
+  .project-view::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0;
+    bottom: calc(174px - var(--fade-tab-overlap));
+    height: var(--fade-tab-overlap);
+    background: var(--bg-base);
+    z-index: 1;
+    pointer-events: none;
   }
 
   /* ============ Search view (Figma 3130:165656 default / 3130:165997 no result) ============ */
@@ -1910,9 +1931,19 @@
   .chat-jump img { width: 20px; height: 20px; opacity: 0.65; }
   .chat-jump.hidden { opacity: 0; pointer-events: none; }
   .chat-fade {
-    position: absolute; left: 0; right: 0; bottom: 100px; height: 60px;
+    /* Default: covers scroll foot (160) down to composer host (100).
+       Overlaps the host by --fade-tab-overlap; solid lower half on --chat-bg. */
+    position: absolute; left: 0; right: 0;
+    bottom: calc(100px - var(--fade-tab-overlap));
+    height: calc(60px + var(--fade-tab-overlap));
+    z-index: 2;
     pointer-events: none;
-    background: linear-gradient(to bottom, transparent, var(--chat-bg));
+    background: linear-gradient(to bottom, var(--fade-start), var(--chat-bg) 50%, var(--chat-bg));
+  }
+  /* cmp-open raises .chat-scroll to 224 — grow the fade so the 224→160 band
+     stays masked (composer host remains at bottom:100). */
+  .phone.cmp-open .chat-fade {
+    height: calc(124px + var(--fade-tab-overlap));
   }
 
   .chat-view .bottom {
@@ -1922,6 +1953,15 @@
        identical to home — only this host anchor needed aligning. */
     position: absolute; left: 0; right: 0; bottom: 100px;
     display: flex; flex-direction: column; align-items: center;
+  }
+  .chat-view .bottom::before {
+    content: "";
+    position: absolute;
+    left: 0; right: 0;
+    top: calc(-1 * var(--fade-tab-overlap));
+    height: var(--fade-tab-overlap);
+    background: var(--chat-bg);
+    pointer-events: none;
   }
 
   .phone.view-search .search-view { display: block; }
@@ -1989,10 +2029,11 @@
     color: var(--black-65);
   }
 
-  /* Results: clone of the project task cards, below the search bar */
+  /* Results: clone of the project task cards, below the search bar.
+     Foot edge uses --sch-bottom so .sch-fade stays locked to the scroll. */
   .sch-scroll {
     position: absolute;
-    left: 0; right: 0; top: 131px; bottom: 33px;
+    left: 0; right: 0; top: 131px; bottom: var(--sch-bottom);
     overflow-y: auto;
     display: none;
   }
@@ -2018,9 +2059,10 @@
 
   .sch-fade {
     position: absolute;
-    left: 0; right: 0; bottom: 33px;
-    height: 48px;
-    background: linear-gradient(to bottom, transparent, var(--bg-base));
+    left: 0; right: 0;
+    bottom: calc(var(--sch-bottom) - var(--fade-tab-overlap));
+    height: calc(48px + var(--fade-tab-overlap));
+    background: linear-gradient(to bottom, var(--fade-start), var(--bg-base) 50%, var(--bg-base));
     z-index: 2;
     pointer-events: none;
   }
@@ -2087,7 +2129,7 @@
   .phone.theme-dark .kb-key:active { background: #7D7D80; }
   .phone.theme-dark .kb-fn { background: #4A4A4C; }
   .phone.theme-dark .kb-fn:active, .phone.theme-dark .kb-fn.on { background: #6E6E70; }
-  .phone.kb-open .sch-scroll { bottom: 252px; }
+  /* .phone.kb-open raises --sch-bottom (see .sch-scroll / .sch-fade). */
 
   /* ---- "More" dropdown (Figma 3191:137190 "Component 6", replaced 3120:158882):
      Rename / Pin / Delete; inner column 158px, container left 207 / top 119. ---- */
@@ -2531,7 +2573,7 @@
     left: 16px; top: 93px;
     /* stop above the global tab bar (bottom:33 + h:49 => y=770 + 24 status),
        so content never hides behind it and the page can really scroll down */
-    bottom: 82px;
+    bottom: var(--tabbar-top);
     width: 361px;
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -2540,6 +2582,13 @@
     scrollbar-width: none;
   }
   .me-content::-webkit-scrollbar { display: none; }
+  .me-fade {
+    position: absolute; left: 0; right: 0;
+    bottom: calc(var(--tabbar-top) - var(--fade-tab-overlap));
+    height: calc(48px + var(--fade-tab-overlap));
+    background: linear-gradient(to bottom, var(--fade-start), var(--bg-base) 50%, var(--bg-base));
+    z-index: 2; pointer-events: none;
+  }
   .me-profile {
     width: 152px;
     margin: 0 auto;
@@ -2884,13 +2933,21 @@
     font-size: 20px; font-weight: 500; line-height: 28px; color: var(--black-85); }
 
   .dev-list {
-    position: absolute; left: 16px; top: 131px; bottom: 82px; width: 361px;
+    position: absolute; left: 16px; top: 131px; bottom: var(--tabbar-top); width: 361px;
     overflow-y: auto;
     display: flex; flex-direction: column; align-items: flex-start; gap: 16px;
     padding-bottom: 48px;
     scrollbar-width: none;
   }
   .dev-list::-webkit-scrollbar { display: none; }
+  /* Same bottom-stack fade as .notify-fade / .task-fade. */
+  .dev-fade {
+    position: absolute; left: 0; right: 0;
+    bottom: calc(var(--tabbar-top) - var(--fade-tab-overlap));
+    height: calc(48px + var(--fade-tab-overlap));
+    background: linear-gradient(to bottom, var(--fade-start), var(--bg-base) 50%, var(--bg-base));
+    z-index: 2; pointer-events: none;
+  }
 
   .dev-card {
     flex-shrink: 0; width: 100%; background: var(--bg-layout);
@@ -3841,6 +3898,8 @@
       </div>
     </div>
 
+    <div class="me-fade" data-page-node-id="meFadeSeal001BottomTab"></div>
+
   </div>
 
   <!-- ============ Profile edit view ============ -->
@@ -4017,6 +4076,8 @@
 
     <div class="dev-list" id="dev-list" data-page-node-id="fsMic0fWiH1BWrk5JlzYzk"><!-- rendered by JS --></div>
 
+    <div class="dev-fade" data-page-node-id="devFadeSeal001BottomTab"></div>
+
     <!-- Empty state -->
     <div class="dev-empty" data-page-node-id="GuGU7RvwFRmC5aQVJiJ9Yh">
       <div class="icon3d" data-page-node-id="9qDJjkidDQx4gC23HHQqVC"><img src="assets/mxj_no_device.png" alt="" data-page-node-id="wwuqi7bdRiG4USyBUI4Sl1"></div>
@@ -4045,6 +4106,8 @@
 
     <!-- Found devices -->
     <div class="dev-list" id="adddev-list" data-page-node-id="eG1Qs0gbNrSvmEGNsfk8MH"><!-- rendered by JS --></div>
+
+    <div class="dev-fade" data-page-node-id="addDevFadeSeal001Bottom"></div>
 
   </div>
 
@@ -5988,11 +6051,16 @@
     const scale = rect.width / 393 || 1;
     const kbTopView = vv.height + vv.offsetTop;
     const kbUp = window.innerHeight - kbTopView > 80;
-    document.querySelectorAll('.sch-scroll').forEach(el => {
-      el.style.bottom = kbUp
-        ? (852 - (kbTopView - rect.top) / scale).toFixed(1) + 'px'
-        : '';
-    });
+    // Drive both .sch-scroll and .sch-fade via one token so the fade
+    // never desyncs when the real IME height differs from the 252px stub.
+    if (kbUp) {
+      phone.style.setProperty(
+        '--sch-bottom',
+        (852 - (kbTopView - rect.top) / scale).toFixed(1) + 'px'
+      );
+    } else {
+      phone.style.removeProperty('--sch-bottom');
+    }
   }
   if (IS_APP && window.visualViewport) {
     window.visualViewport.addEventListener('resize', sysKbFloat);
@@ -7412,7 +7480,7 @@
   // ============ Android APK shell bridge ============
   // Only active in app mode, where the native shell injects window.CiviaNative.
   // Covers: (1) OTA hot update of the web bundle, (2) system back button.
-  const WEB_VERSION = '1.0.19';
+  const WEB_VERSION = '1.0.20';
   const UPDATE_URL = 'https://luact-nb.github.io/civia-ota/version.json';
 
   // "Me" page version row — shows the running bundle version in every mode;
