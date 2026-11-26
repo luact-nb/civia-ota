@@ -763,98 +763,94 @@
   .cs-ban { width: 24px; height: 24px; flex-shrink: 0; }
   .cs-row img.mono { width: 24px; height: 24px; flex-shrink: 0; }
 
-  /* ---- 18 Version details sheet: opened from the Me page version row.
-     Shows current vs. latest version + release notes (manifest.log); the
-     Update button starts the OTA download explicitly — checking detects,
-     never auto-downloads. Progress lives in the persistent bubble below. ---- */
-  .phone.ver-open .mscrim { opacity: 1; pointer-events: auto; }
-  .phone.ver-open .ver-sheet { transform: translateY(0); }
-  .ver-sheet {
-    position: absolute;
-    left: 0; right: 0; bottom: 0;
-    height: 480px;
-    background: var(--bg-container);
-    border-radius: 16px 16px 0 0;
-    z-index: 9;
-    transform: translateY(100%);
-    transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
-    display: flex;
-    flex-direction: column;
+  /* ---- 18 Version details PAGE (full-screen, not a bottom sheet).
+     Opened from the Me version row. Update is explicit; progress is the
+     global ota-bubble. While downloading, back / tab switches are blocked. ---- */
+  .version-view {
+    position: absolute; inset: 0; display: none;
+    background: var(--bg-base); z-index: 3;
   }
-  .ver-body { flex: 1 1 0; overflow-y: auto; padding: 16px; box-sizing: border-box; }
-  /* while the progress bubble floats over the sheet, let the changelog scroll
-     clear of it instead of hiding its first entry */
-  .ver-body.ob-visible { padding-bottom: 120px; }
+  .phone.view-version .version-view { display: block; }
+  .phone.view-version .main, .phone.view-version .task-view,
+  .phone.view-version .me-view, .phone.view-version .profile-view,
+  .phone.view-version .notify-view, .phone.view-version .devices-view,
+  .phone.view-version .adddev-view, .phone.view-version .project-view,
+  .phone.view-version .discover-view, .phone.view-version .chat-view,
+  .phone.view-version .search-view { display: none; }
+
+  .ver-header {
+    position: absolute; left: 16px; top: 69px; width: 361px;
+    display: flex; align-items: center;
+  }
+  .ver-header .icon-btn { padding: 11px; flex-shrink: 0; }
+  .ver-header .t-title {
+    flex: 1 0 0; min-width: 0; padding-right: 46px;
+    text-align: center; font-size: 20px; font-weight: 500;
+    line-height: 28px; color: var(--black-85);
+  }
+  .ver-body {
+    position: absolute; left: 16px; right: 16px; top: 131px; bottom: 33px;
+    overflow-y: auto; scrollbar-width: none;
+    padding-bottom: 24px; box-sizing: border-box;
+  }
+  .ver-body::-webkit-scrollbar { display: none; }
+  .ver-body.ob-visible { padding-bottom: 140px; }
+  /* Single card — top label / mid version / bottom status. */
   .ver-card {
-    background: var(--bg-disabled);
-    border-radius: 12px;
+    background: var(--bg-layout);
+    border-radius: 16px;
     padding: 14px 16px;
     display: flex;
-    align-items: center;
-    gap: 12px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
   }
-  .ver-card + .ver-card, .ver-update-btn, .ver-log { margin-top: 12px; }
-  .ver-card .vb-main { flex: 1 1 0; min-width: 0; }
-  .ver-card .vb-label { font-size: 13px; line-height: 18px; color: var(--black-45); }
-  .ver-card .vb-val { font-size: 17px; line-height: 24px; font-weight: 600; color: var(--black-85); margin-top: 2px; }
-  .ver-card .vb-note { font-size: 13px; line-height: 18px; color: var(--black-45); margin-top: 2px; }
-  .ver-card.is-new { box-shadow: inset 0 0 0 1px #4080FF; }
-  .ver-badge {
-    flex-shrink: 0;
-    font-size: 12px; line-height: 20px;
-    padding: 0 10px;
-    border-radius: 10px;
-    background: rgba(64, 128, 255, 0.12);
-    color: #4080FF;
-    font-weight: 500;
-    display: none;
-  }
-  .ver-card.is-new .ver-badge { display: block; }
+  .ver-card .vb-label { font-size: 14px; line-height: 20px; color: var(--black-45); }
+  .ver-card .vb-val { font-size: 18px; line-height: 26px; font-weight: 500; color: var(--black-85); }
+  .ver-card .vb-note { font-size: 14px; line-height: 20px; color: var(--black-45); }
+  .ver-card.is-new .vb-note { color: var(--tint-fg-warn); }
   .ver-update-btn {
     width: 100%;
     height: 44px;
+    margin-top: 12px;
     border: none;
     border-radius: 12px;
-    background: #4080FF;
-    color: #FFF;
-    font-size: 17px;
-    font-weight: 500;
+    background: var(--black-85);
+    color: var(--btn-solid-fg);
+    font-family: var(--font);
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 22px;
     cursor: pointer;
     display: none;
   }
   .ver-update-btn.show { display: block; }
-  .ver-update-btn:disabled { opacity: 0.45; cursor: default; }
-  .ver-log { border-top: 1px solid var(--divider); padding-top: 14px; }
-  .ver-log .vl-label { font-size: 15px; font-weight: 600; color: var(--black-85); }
+  .ver-update-btn:disabled { background: var(--bg-disabled); color: var(--black-25); cursor: default; }
+  .ver-log { margin-top: 12px; border-top: 1px solid var(--divider); padding-top: 14px; }
+  .ver-log .vl-label { font-size: 16px; font-weight: 500; color: var(--black-85); line-height: 22px; }
   .ver-log .vl-item { margin-top: 12px; }
-  .ver-log .vl-item .vl-v { font-size: 14px; font-weight: 600; color: var(--black-85); line-height: 20px; }
+  .ver-log .vl-item .vl-v { font-size: 14px; font-weight: 500; color: var(--black-85); line-height: 20px; }
   .ver-log .vl-item .vl-d { font-size: 14px; color: var(--black-65); line-height: 20px; margin-top: 2px; }
   .ver-log .vl-empty { font-size: 14px; color: var(--black-45); line-height: 20px; margin-top: 12px; }
 
-  /* Me page version row: red dot badge + "update available" pill when the
-     check found a newer bundle. The row itself is the details entry. */
+  /* Me page: yellow dot left of the version number when an update exists. */
   .ver-row-right { display: flex; align-items: center; gap: 8px; }
-  .ver-new-pill {
+  .ver-dot {
     display: none;
-    font-size: 12px; line-height: 20px;
-    padding: 0 10px;
-    border-radius: 10px;
-    background: rgba(64, 128, 255, 0.12);
-    color: #4080FF;
-    font-weight: 500;
-    white-space: nowrap;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--tint-fg-warn);
+    flex-shrink: 0;
   }
-  .phone.ota-new .ver-new-pill { display: block; }
+  .phone.ota-new .ver-dot { display: block; }
 
-  /* Persistent OTA progress bubble: floats above everything while the
-     bundle downloads; its Cancel button aborts the native transfer. */
+  /* Global OTA progress bubble — stay-on-page warning + % + cancel. */
   .ota-bubble {
     position: absolute;
     left: 16px; right: 16px;
     bottom: 96px;
     background: var(--bg-container);
     border-radius: 16px;
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+    box-shadow: var(--shadow-card);
     padding: 14px 16px;
     z-index: 12;
     opacity: 0;
@@ -868,17 +864,18 @@
     width: 18px; height: 18px; flex-shrink: 0;
     border-radius: 50%;
     border: 2px solid var(--black-25);
-    border-top-color: #4080FF;
+    border-top-color: var(--black-85);
     animation: ota-spin 0.9s linear infinite;
   }
   @keyframes ota-spin { to { transform: rotate(360deg); } }
-  .ob-txt { flex: 1 1 0; font-size: 15px; line-height: 20px; color: var(--black-85); font-weight: 500; min-width: 0; }
+  .ob-txt { flex: 1 1 0; font-size: 14px; line-height: 20px; color: var(--black-85); font-weight: 500; min-width: 0; }
   .ob-cancel {
     flex-shrink: 0;
     border: none; background: none;
     padding: 6px 4px;
-    font-size: 15px; line-height: 20px;
-    color: #4080FF;
+    font-family: var(--font);
+    font-size: 14px; line-height: 20px;
+    color: var(--black-85);
     cursor: pointer;
   }
   .ob-cancel:disabled { color: var(--black-45); cursor: default; }
@@ -893,7 +890,7 @@
     height: 100%;
     width: 0%;
     border-radius: 3px;
-    background: #4080FF;
+    background: var(--black-85);
     transition: width 0.2s ease;
   }
 
@@ -2561,7 +2558,8 @@
   .phone.view-profile .discover-view,
   .phone.view-notify .discover-view,
   .phone.view-devices .discover-view,
-  .phone.view-adddev .discover-view { display: none; }
+  .phone.view-adddev .discover-view,
+  .phone.view-version .discover-view { display: none; }
 
   /* ============ Me view ============ */
   .me-view { position: absolute; inset: 0; display: none; }
@@ -3870,16 +3868,15 @@
             </div>
           </button>
 
-          <!-- App-shell version row: always opens the version details sheet.
-             In app mode the silent OTA check only flags availability here —
-             updating is explicit, from the sheet's Update button. -->
+          <!-- Version row → full-screen version details page. Yellow dot
+             appears left of the number when a newer OTA bundle is available. -->
           <button class="me-row" id="row-version" data-page-node-id="qLe3fDuGETeNv8Z6YZegMS">
             <div class="left" data-page-node-id="HxFsWpHcGaeFBFJwwG12No">
               <img class="mono" src="assets/icon_ai_l.svg" alt="" data-page-node-id="URjoaEOVElSOkSMJhtP3OV">
               <span class="label" data-i18n="me.version" data-page-node-id="SaCB1KoDR8sp9a3FSkkAU5">Version</span>
             </div>
             <div class="right ver-row-right" data-page-node-id="A7alUC4D66sKFiQMjiK9Pp">
-              <span class="ver-new-pill" data-i18n="ver.newAvailable" data-page-node-id="6KS5zcdwI1v4Xh5m4qf3IZ">New version</span>
+              <span class="ver-dot" aria-hidden="true" data-page-node-id="6KS5zcdwI1v4Xh5m4qf3IZ"></span>
               <span class="value" id="me-version-val" data-page-node-id="DL0ubkOE9Df0xbLfBTZKHu">1.0.0</span>
               <img class="mono" src="assets/icon_chevron.svg" alt="" data-page-node-id="EjVRsA4puI6Ybx572ECPAI">
             </div>
@@ -4559,30 +4556,22 @@
     </div>
   </div>
 
-  <!-- 18 Version details sheet: current vs. latest version, release notes,
-       and the explicit Update button. Contents are rendered by JS from the
-       OTA state (see verState below) — markup is structural only. -->
-  <div class="ver-sheet" id="ver-sheet" data-page-node-id="DdIF7OjQoSq1YxoOKA7ykC">
-    <div class="ms-head" data-page-node-id="CYZhdvEY3lNRohqgpyvxsm">
-      <span class="t" data-i18n="ver.title" data-page-node-id="Xf9HCfpzLDy9VxoKs61wZS">Version Details</span>
-      <img class="mono" id="ver-close" src="assets/icon_close.svg" alt="" data-page-node-id="h54jgmgwYrkE1gKPqDxz8I">
+  <!-- 18 Version details page: current / latest, optional Update (black-85),
+       and release notes. Rendered from verState; OTA progress is the bubble. -->
+  <div class="version-view" id="version-view" data-page-node-id="DdIF7OjQoSq1YxoOKA7ykC">
+    <div class="ver-header" data-page-node-id="CYZhdvEY3lNRohqgpyvxsm">
+      <button class="icon-btn" id="ver-back" aria-label="Back" data-page-node-id="h54jgmgwYrkE1gKPqDxz8I">
+        <img class="mono" src="assets/icon_back.svg" alt="" data-page-node-id="verBackIcon001Arrow">
+      </button>
+      <div class="t-title" data-i18n="ver.title" data-page-node-id="Xf9HCfpzLDy9VxoKs61wZS">Version</div>
     </div>
     <div class="ver-body" id="ver-body" data-page-node-id="AvrIAmEvFixrAZCgMzrIrE">
-      <div class="ver-card" id="ver-card-cur" data-page-node-id="ticLxuAvbu10VkgCgRbqMC">
-        <div class="vb-main" data-page-node-id="pSr3jsHpZ5ncOBWJUI2e4Y">
-          <div class="vb-label" data-i18n="ver.current" data-page-node-id="2BD9Rhr08q0JdvngvJ3fHI">Current Version</div>
-          <div class="vb-val" id="ver-cur-val" data-page-node-id="AxT5XffbCpTVQ9pN2DbH8H">v1.0.0</div>
-        </div>
+      <div class="ver-card" id="ver-card" data-page-node-id="ticLxuAvbu10VkgCgRbqMC">
+        <div class="vb-label" data-i18n="ver.current" data-page-node-id="2BD9Rhr08q0JdvngvJ3fHI">Current Version</div>
+        <div class="vb-val" id="ver-cur-val" data-page-node-id="AxT5XffbCpTVQ9pN2DbH8H">v1.0.0</div>
+        <div class="vb-note" id="ver-status-note" data-page-node-id="tFoEEHVylaaQzm1ye8B4oy">You're up to date</div>
       </div>
-      <div class="ver-card" id="ver-card-lat" data-page-node-id="dvof3obvqBhSwN5K2S4IwW">
-        <div class="vb-main" data-page-node-id="VNU3ysHEpLXyU97lrZeIkj">
-          <div class="vb-label" data-i18n="ver.latest" data-page-node-id="KvkUs14KFdDZjnlM0q2n75">Latest Version</div>
-          <div class="vb-val" id="ver-lat-val" data-page-node-id="ophrxZH53y2KKpL8tCeGC1">—</div>
-          <div class="vb-note" id="ver-lat-note" data-page-node-id="tFoEEHVylaaQzm1ye8B4oy">You're up to date</div>
-        </div>
-        <span class="ver-badge" data-i18n="ver.newAvailable" data-page-node-id="ltFL4txNyohqV1WFWSh3Q2">New version</span>
-      </div>
-      <button class="ver-update-btn" id="ver-update-btn" data-i18n="ver.update" data-page-node-id="WOPbb3X2Azp02gK0t9DeEC">Update Now</button>
+      <button class="ver-update-btn" id="ver-update-btn" data-i18n="ver.update" data-page-node-id="WOPbb3X2Azp02gK0t9DeEC">Update</button>
       <div class="ver-log" data-page-node-id="KL8lxrhllt7Jwq6Ie4z12R">
         <div class="vl-label" data-i18n="ver.changelog" data-page-node-id="GHSykH6JBc0EcVL0V0lw2v">Release Notes</div>
         <div id="ver-log-list" data-page-node-id="qsiuuxWDLQvn6BFw3oGSOA"></div>
@@ -4590,8 +4579,7 @@
     </div>
   </div>
 
-  <!-- Persistent OTA progress bubble: shown while the bundle downloads.
-     Real-time progress + an actionable Cancel (中断更新) entry. -->
+  <!-- Global OTA progress bubble: stay warning + % + Cancel. -->
   <div class="ota-bubble" id="ota-bubble" data-page-node-id="S7PxutQ5TazHwnmumDPIPL">
     <div class="ob-top" data-page-node-id="Gv6DkjIeXkgQfc6BuJAbiC">
       <div class="ob-spin" id="ob-spin" data-page-node-id="7VvvU9QiDuKTbTmlMjHMPO"></div>
@@ -4665,13 +4653,15 @@
       'home.heroSub': 'Please tell me<br>what you would like to do...&nbsp;',
       'composer.ph': 'Message or hold to talk', 'composer.ph.focus': 'Task Civia', 'composer.model': 'Default',
       'me.version': 'Version',
-      'ver.title': 'Version Details', 'ver.current': 'Current Version',
+      'ver.title': 'Version', 'ver.current': 'Current Version',
       'ver.latest': 'Latest Version', 'ver.upToDate': "You're up to date",
-      'ver.update': 'Update Now', 'ver.changelog': 'Release Notes',
+      'ver.update': 'Update', 'ver.changelog': 'Release Notes',
       'ver.newAvailable': 'New version', 'ver.noLog': 'No release notes yet',
       'ver.checking': 'Checking…',
-      'ota.updating': 'Updating to ', 'ota.cancel': 'Cancel',
+      'ota.stay': 'Hot update in progress — please stay',
+      'ota.updating': 'Updating ', 'ota.cancel': 'Cancel',
       'ota.cancelling': 'Cancelling…', 'ota.cancelled': 'Update cancelled',
+      'ota.blocked': 'Please wait until the update finishes',
       'ota.foundNotify': 'New version available: ',
       'ota.done': 'Update installed, restarting…', 'ota.error': 'Update failed',
       'ota.fail': 'Update check failed',
@@ -4798,13 +4788,15 @@
       'home.heroSub': '请告诉我<br>你想做什么……',
       'composer.ph': '输入消息或长按说话', 'composer.ph.focus': '给 Civia 派个任务', 'composer.model': '默认',
       'me.version': '版本',
-      'ver.title': '版本详情', 'ver.current': '当前版本',
+      'ver.title': '版本', 'ver.current': '当前版本',
       'ver.latest': '最新版本', 'ver.upToDate': '已是最新版本',
-      'ver.update': '立即更新', 'ver.changelog': '更新记录',
+      'ver.update': '更新', 'ver.changelog': '更新记录',
       'ver.newAvailable': '有新版本', 'ver.noLog': '暂无更新记录',
       'ver.checking': '检查中…',
+      'ota.stay': '热更新中，请勿离开',
       'ota.updating': '正在更新 ', 'ota.cancel': '中断',
       'ota.cancelling': '正在中断…', 'ota.cancelled': '更新已中断',
+      'ota.blocked': '请等待更新完成后再离开',
       'ota.foundNotify': '发现新版本 ',
       'ota.done': '更新完成，正在重启…', 'ota.error': '更新失败',
       'ota.fail': '检查更新失败',
@@ -6276,7 +6268,6 @@
     if (phone.classList.contains('mode-open')) closeModeSheet();
     if (phone.classList.contains('res-open')) closeResSheet();
     if (phone.classList.contains('conn-open')) closeConnSheet();
-    if (phone.classList.contains('ver-open')) closeVerSheet();
   });
   // Focused card without keyboard (e.g. after picking a mode): tapping the
   // input line brings the keyboard back.
@@ -7135,15 +7126,20 @@
   const tabItems = [...document.querySelectorAll('.app-tabbar .tab-item[data-tab]')];
 
   function setActiveTab(tab) {
+    // Hot update in flight: stay on the version page (do not leave).
+    if (typeof verState !== 'undefined' && verState.downloading) {
+      otaToast(t('ota.blocked'));
+      return;
+    }
     if (phone.classList.contains('cmp-open')) closeComposer();
     if (phone.classList.contains('att-open')) closeAttSheet();
     // CSS shows the matching preloaded icon variant from the .active class;
     // no img.src mutation, so switching never blanks an icon mid-frame.
     tabItems.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
     phone.classList.remove('view-task', 'view-discover', 'view-me', 'view-profile', 'view-notify',
-      'view-devices', 'view-adddev', 'view-project', 'view-search', 'view-chat',
+      'view-devices', 'view-adddev', 'view-project', 'view-search', 'view-chat', 'view-version',
       'pjmenu-open', 'search-hasq', 'search-noresult', 'kb-open',
-      'conn-open', 'attview-open', 'voice-open', 'cmp-running', 'ver-open');
+      'conn-open', 'attview-open', 'voice-open', 'cmp-running');
     if (tab === 'task') phone.classList.add('view-task');
     if (tab === 'discover') phone.classList.add('view-discover');
     if (tab === 'me') phone.classList.add('view-me');
@@ -7499,7 +7495,7 @@
   // ============ Android APK shell bridge ============
   // Only active in app mode, where the native shell injects window.CiviaNative.
   // Covers: (1) OTA hot update of the web bundle, (2) system back button.
-  const WEB_VERSION = '1.0.22';
+  const WEB_VERSION = '1.0.23';
   const UPDATE_URL = 'https://luact-nb.github.io/civia-ota/version.json';
 
   // "Me" page version row — shows the running bundle version in every mode;
@@ -7526,18 +7522,17 @@
   }
 
   // ---- OTA state machine ------------------------------------------------
-  // checking  : a version check is in flight (sheet shows 检查中…)
-  // manifest  : a NEWER bundle was found; update only starts on user tap
-  // downloading : transfer in flight → persistent progress bubble is live
-  // Cancel ("中断更新") aborts the native download; the sheet returns to the
-  // "new version available" state and the update can be re-initiated.
-  const verState = { checking: false, manifest: null, downloading: false, error: null };
-  const verSheetEl = document.getElementById('ver-sheet');
+  // checking    : version check in flight (page shows 检查中…)
+  // update      : NEWER manifest — drives yellow dot + Update button
+  // info        : last successful manifest (log + latest card even if up-to-date)
+  // downloading : transfer in flight → global bubble; back/tab blocked
+  const verState = {
+    checking: false, update: null, info: null, downloading: false, error: null
+  };
   const verBodyEl = document.getElementById('ver-body');
+  const verCard = document.getElementById('ver-card');
   const verCurVal = document.getElementById('ver-cur-val');
-  const verLatVal = document.getElementById('ver-lat-val');
-  const verLatNote = document.getElementById('ver-lat-note');
-  const verCardLat = document.getElementById('ver-card-lat');
+  const verStatusNote = document.getElementById('ver-status-note');
   const verUpdateBtn = document.getElementById('ver-update-btn');
   const verLogList = document.getElementById('ver-log-list');
   const otaBubble = document.getElementById('ota-bubble');
@@ -7545,27 +7540,25 @@
   const obFill = document.getElementById('ob-fill');
   const obCancel = document.getElementById('ob-cancel');
 
-  function renderVerSheet() {
+  function renderVerPage() {
     verCurVal.textContent = 'v' + WEB_VERSION;
-    const m = verState.manifest;
-    verCardLat.classList.toggle('is-new', !!(m && !verState.downloading));
-    if (verState.checking) {
-      verLatVal.textContent = '…';
-      verLatNote.textContent = t('ver.checking');
-    } else if (m) {
-      verLatVal.textContent = 'v' + m.version;
-      verLatNote.textContent = m.notes || t('ver.upToDate');
+    const upd = verState.update;
+    const info = verState.info || upd;
+    const hasNew = !!(upd && !verState.downloading);
+    verCard.classList.toggle('is-new', hasNew);
+    if (verState.checking && !info && !upd) {
+      verStatusNote.textContent = t('ver.checking');
+    } else if (upd) {
+      verStatusNote.textContent = t('ver.newAvailable') + ' v' + upd.version;
     } else {
-      verLatVal.textContent = 'v' + WEB_VERSION;
-      verLatNote.textContent = t('ver.upToDate');
+      verStatusNote.textContent = verState.checking ? t('ver.checking') : t('ver.upToDate');
     }
-    verUpdateBtn.classList.toggle('show', !!m);
+    verUpdateBtn.classList.toggle('show', !!upd);
     verUpdateBtn.disabled = verState.downloading;
-    // changelog: manifest.log (newest first, from version.json); fallback to
-    // the manifest notes, or a placeholder when nothing was found yet.
-    if (m) {
-      const items = (Array.isArray(m.log) && m.log.length)
-        ? m.log : [{ v: m.version, d: m.notes || '' }];
+    const logSrc = info || upd;
+    if (logSrc) {
+      const items = (Array.isArray(logSrc.log) && logSrc.log.length)
+        ? logSrc.log : [{ v: logSrc.version, d: logSrc.notes || '' }];
       verLogList.innerHTML = items.map(it =>
         '<div class="vl-item"><div class="vl-v">v' + escHtml(it.v) + '</div>' +
         (it.d ? '<div class="vl-d">' + escHtml(it.d) + '</div>' : '') + '</div>'
@@ -7574,25 +7567,31 @@
       verLogList.innerHTML = '<div class="vl-empty">' + escHtml(t('ver.noLog')) + '</div>';
     }
   }
+  // Keep the old name as an alias so any leftover call sites still work.
+  function renderVerSheet() { renderVerPage(); }
 
-  // ---- progress bubble ----------------------------------------------------
-  function showBubble(ver) {
+  function bubbleLabel(pct) {
+    const p = pct == null ? '' : (' · ' + pct + '%');
+    return t('ota.stay') + p;
+  }
+  function showBubble() {
     obFill.style.width = '0%';
-    obTxt.textContent = t('ota.updating') + 'v' + ver;
+    obTxt.textContent = bubbleLabel(0);
     obCancel.disabled = false;
     otaBubble.classList.add('show');
     verBodyEl.classList.add('ob-visible');
   }
-  function hideBubble() { otaBubble.classList.remove('show'); verBodyEl.classList.remove('ob-visible'); }
+  function hideBubble() {
+    otaBubble.classList.remove('show');
+    verBodyEl.classList.remove('ob-visible');
+  }
   function fmtMb(n) { return (n / 1048576).toFixed(1) + ' MB'; }
-  // Native streams (received, total, pct) every ~128 KB. Unknown total keeps
-  // the label alive with received bytes and the bar at a calm crawl.
   window.__civiaOtaProgress = function (received, total, pct) {
-    if (!verState.downloading || !verState.manifest) return;
+    if (!verState.downloading || !verState.update) return;
     const p = Math.max(0, Math.min(100, Number(pct) || 0));
     obFill.style.width = p + '%';
-    obTxt.textContent = t('ota.updating') + 'v' + verState.manifest.version +
-      ' · ' + (total > 0 ? p + '%' : fmtMb(Number(received) || 0));
+    if (total > 0) obTxt.textContent = bubbleLabel(p);
+    else obTxt.textContent = t('ota.stay') + ' · ' + fmtMb(Number(received) || 0);
   };
 
   function finishDownload(ok, msg) {
@@ -7602,51 +7601,41 @@
       otaToast(t('ota.done'));
       setTimeout(() => { try { window.CiviaNative.reloadUpdated(); } catch (e) {} }, 600);
     } else if (msg === 'cancelled') {
-      // back to a clean, understandable state: bubble gone, sheet says a new
-      // version is still available and the Update button is live again
       otaToast(t('ota.cancelled'));
     } else {
       verState.error = msg || 'error';
       otaToast(t('ota.error') + (msg ? ': ' + msg : ''));
     }
-    renderVerSheet();
+    renderVerPage();
   }
   window.__civiaDownloadResult = function (ok, msg) {
     finishDownload(ok === true || ok === 'true' || ok === 'ok', msg);
   };
 
-  // ---- version check ------------------------------------------------------
   window.__civiaOtaResult = function (res) {
     verState.checking = false;
-    // A late check result must never yank the manifest away mid-download.
     if (verState.downloading) return;
     try {
       const r = JSON.parse(res);
-      if (r && r.ok && r.manifest && r.manifest.version
-          && cmpVer(r.manifest.version, WEB_VERSION) > 0) {
-        const first = !verState.manifest;
-        verState.manifest = r.manifest;
-        phone.classList.add('ota-new');
-        renderVerSheet();
-        // one-time heads-up outside the sheet; inside, the cards speak
-        if (first && !phone.classList.contains('ver-open')) {
-          otaToast(t('ota.foundNotify') + 'v' + r.manifest.version);
-        }
-      } else if (r && r.ok) {
-        // server version <= running version: nothing to offer
-        if (!r.manifest || !r.manifest.version
-            || cmpVer(r.manifest.version, WEB_VERSION) <= 0) {
-          verState.manifest = null;
+      if (r && r.ok && r.manifest && r.manifest.version) {
+        verState.info = r.manifest;
+        const newer = cmpVer(r.manifest.version, WEB_VERSION) > 0;
+        if (newer) {
+          const first = !verState.update;
+          verState.update = r.manifest;
+          phone.classList.add('ota-new');
+          if (first && !phone.classList.contains('view-version')) {
+            otaToast(t('ota.foundNotify') + 'v' + r.manifest.version);
+          }
+        } else {
+          verState.update = null;
           phone.classList.remove('ota-new');
         }
-        renderVerSheet();
-      } else if (!verState.manifest) {
-        // check failed and nothing previously known: show the failure state
+      } else if (!verState.info) {
         verState.error = (r && r.error) || 'check failed';
-        renderVerSheet();
       }
     } catch (e) {}
-    renderVerSheet();
+    renderVerPage();
   };
   function checkOta() {
     if (verState.checking || verState.downloading) return;
@@ -7655,50 +7644,53 @@
       return;
     }
     verState.checking = true;
-    renderVerSheet();
+    renderVerPage();
     try { window.CiviaNative.checkUpdate(UPDATE_URL); }
-    catch (e) { verState.checking = false; renderVerSheet(); }
-    // watchdog: native always answers (10s http timeout) — never trust it
-    setTimeout(() => { if (verState.checking) { verState.checking = false; renderVerSheet(); } }, 15000);
+    catch (e) { verState.checking = false; renderVerPage(); }
+    setTimeout(() => { if (verState.checking) { verState.checking = false; renderVerPage(); } }, 15000);
   }
 
-  // ---- sheet open / close -------------------------------------------------
-  function openVerSheet() {
-    // bottom sheets must never open over the raised keyboard (z9 < z12)
+  function openVerPage() {
     if (phone.classList.contains('kb-open')) { dialogKbClose(); cmpFloat(); }
-    phone.classList.add('ver-open');
-    renderVerSheet();
-    // silent refresh on every entry; the cards reflect the result in place
+    phone.classList.add('view-version');
+    // Keep view-me underneath so back returns to Me without retargeting tabs.
+    if (!phone.classList.contains('view-me')) phone.classList.add('view-me');
+    renderVerPage();
     if (IS_APP && window.CiviaNative) setTimeout(checkOta, 150);
   }
-  function closeVerSheet() { phone.classList.remove('ver-open'); }
+  function closeVerPage() {
+    if (verState.downloading) {
+      otaToast(t('ota.blocked'));
+      return false;
+    }
+    phone.classList.remove('view-version');
+    return true;
+  }
+  function openVerSheet() { openVerPage(); }
+  function closeVerSheet() { return closeVerPage(); }
+
   const rowVersion = document.getElementById('row-version');
   if (rowVersion) rowVersion.addEventListener('click', (e) => {
     e.stopPropagation();
-    openVerSheet();
+    openVerPage();
   });
-  document.getElementById('ver-close').addEventListener('click', (e) => {
+  document.getElementById('ver-back').addEventListener('click', (e) => {
     e.stopPropagation();
-    closeVerSheet();
+    closeVerPage();
   });
-  verSheetEl.addEventListener('click', (e) => e.stopPropagation());
 
-  // ---- explicit update + cancel ------------------------------------------
-  let mockTimer = null;   // browser prototype simulation only
+  let mockTimer = null;
   verUpdateBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    if (verState.downloading || !verState.manifest) return;
+    if (verState.downloading || !verState.update) return;
     verState.downloading = true;
     verState.error = null;
-    showBubble(verState.manifest.version);
-    renderVerSheet();
+    showBubble();
+    renderVerPage();
     if (IS_APP && window.CiviaNative) {
-      try { window.CiviaNative.downloadUpdate(verState.manifest.url); }
+      try { window.CiviaNative.downloadUpdate(verState.update.url); }
       catch (err) { finishDownload(false, String(err && err.message || err)); }
     } else {
-      // prototype: simulate a ~1.2 MB download so the full flow is testable.
-      // Probes can set window.__otaMockCfg = { auto:false } to drive progress
-      // / done() manually (deterministic cancel + re-update testing).
       if (window.__otaMockCfg && window.__otaMockCfg.auto === false) return;
       let p = 0;
       mockTimer = setInterval(() => {
@@ -7719,37 +7711,42 @@
     obCancel.disabled = true;
     obTxt.textContent = t('ota.cancelling');
     if (IS_APP && window.CiviaNative) {
-      try { window.CiviaNative.cancelUpdate(); }   // native replies "cancelled"
+      try { window.CiviaNative.cancelUpdate(); }
       catch (err) { finishDownload(false, 'cancelled'); }
     } else if (mockTimer) {
       clearInterval(mockTimer); mockTimer = null;
       finishDownload(false, 'cancelled');
     }
-    // Watchdog: if native never reports back (e.g. a stuck socket), don't
-    // strand the UI on "Cancelling…" — restore and allow another attempt.
     setTimeout(() => {
       if (verState.downloading && obCancel.disabled) finishDownload(false, 'cancelled');
     }, 8000);
   });
 
   if (IS_APP && window.CiviaNative) {
-    setTimeout(checkOta, 3000);   // silent availability check after first paint
+    setTimeout(checkOta, 3000);
   } else {
-    // Browser prototype: probes drive the same UI through this mock surface.
     window.__otaMock = {
       found(manifest) {
         verState.checking = false;
-        verState.manifest = manifest;
+        verState.info = manifest;
+        verState.update = manifest;
         phone.classList.add('ota-new');
-        renderVerSheet();
+        renderVerPage();
+      },
+      upToDate(manifest) {
+        verState.checking = false;
+        verState.info = manifest || { version: WEB_VERSION, notes: '', log: [] };
+        verState.update = null;
+        phone.classList.remove('ota-new');
+        renderVerPage();
       },
       progress(pct) { window.__civiaOtaProgress(0, 100, pct); },
       done() { finishDownload(true); },
       fail(msg) { finishDownload(false, msg || 'mock failure'); },
       cancelled() { finishDownload(false, 'cancelled'); },
       state: verState,
-      open: openVerSheet,
-      close: closeVerSheet,
+      open: openVerPage,
+      close: closeVerPage,
       check: checkOta,
     };
   }
@@ -7759,6 +7756,11 @@
   // Native shell only — the browser prototype has a real back gesture.
   if (IS_APP && window.CiviaNative) {
     window.__civiaBack = function () {
+      // Hot update in flight: consume back and stay on the version page.
+      if (verState.downloading) {
+        otaToast(t('ota.blocked'));
+        return true;
+      }
       // 1. floating context menus (long-press row/card menus)
       if (lpMenu.classList.contains('open')) { closeLpMenu(); return true; }
       if (pjLpMenu.classList.contains('open')) { closePjLpMenu(); return true; }
@@ -7774,7 +7776,6 @@
       if (phone.classList.contains('mvsheet-open')) { closeMoveSheet(); return true; }
       if (phone.classList.contains('sheet-open')) { closeDeviceSheet(); return true; }
       if (phone.classList.contains('ressearch-open')) { closeResSearch(); return true; }
-      if (phone.classList.contains('ver-open')) { closeVerSheet(); return true; }
       if (phone.classList.contains('conn-open')) { closeConnSheet(); return true; }
       if (phone.classList.contains('res-open')) { closeResSheet(); return true; }
       if (phone.classList.contains('mode-open')) { closeModeSheet(); return true; }
@@ -7794,8 +7795,8 @@
         return true;
       }
       // 7. full-screen views, newest first
+      if (phone.classList.contains('view-version')) { closeVerPage(); return true; }
       if (phone.classList.contains('view-search')) { document.getElementById('sch-cancel').click(); return true; }
-      // chat detail sits on top of home/task/project — close it first
       if (phone.classList.contains('view-chat')) { closeChat(); return true; }
       if (phone.classList.contains('view-notify')) { phone.classList.remove('view-notify'); return true; }
       if (phone.classList.contains('view-adddev')) {
@@ -7808,6 +7809,7 @@
         phone.classList.remove('view-project');
         return true;
       }
+      if (phone.classList.contains('view-profile')) { backToMe(); return true; }
       // 8. composer card open on home (keyboard already closed)
       if (phone.classList.contains('cmp-open')) { closeComposer(); return true; }
       // 9. nothing left to close → let Android handle (minimize / exit)
