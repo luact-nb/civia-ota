@@ -764,8 +764,8 @@
   .cs-row img.mono { width: 24px; height: 24px; flex-shrink: 0; }
 
   /* ---- 18 Version details PAGE (full-screen, not a bottom sheet).
-     Opened from the Me version row. Update is explicit; progress is the
-     global ota-bubble. While downloading, back / tab switches are blocked. ---- */
+     Opened from the Me version row. Update is explicit; progress is a
+     centered modal. While downloading, back / tab switches are blocked. ---- */
   .version-view {
     position: absolute; inset: 0; display: none;
     background: var(--bg-base); z-index: 3;
@@ -843,39 +843,54 @@
   }
   .phone.ota-new .ver-dot { display: block; }
 
-  /* Global OTA progress bubble — stay-on-page warning + % + cancel. */
+  /* Centered OTA progress dialog. Same #ota-bubble show/hide contract
+     as the old bottom bubble; mask matches .me-alert-mask. */
   .ota-bubble {
     position: absolute;
-    left: 16px; right: 16px;
-    bottom: 96px;
+    inset: 0;
+    z-index: 12;
+    background: var(--scrim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 24px;
+    box-sizing: border-box;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.24s ease;
+  }
+  .ota-bubble.show { opacity: 1; visibility: visible; pointer-events: auto; }
+  .ota-card {
+    width: 100%;
+    max-width: 345px;
     background: var(--bg-container);
     border-radius: 16px;
-    box-shadow: var(--shadow-card);
-    padding: 14px 16px;
-    z-index: 12;
-    opacity: 0;
-    pointer-events: none;
-    transform: translateY(12px);
-    transition: opacity 0.24s ease, transform 0.24s ease;
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    box-sizing: border-box;
   }
-  .ota-bubble.show { opacity: 1; pointer-events: auto; transform: translateY(0); }
-  .ob-top { display: flex; align-items: center; gap: 10px; }
-  .ob-spin {
-    width: 18px; height: 18px; flex-shrink: 0;
-    border-radius: 50%;
-    border: 2px solid var(--black-25);
-    border-top-color: var(--black-85);
-    animation: ota-spin 0.9s linear infinite;
+  .ota-card .t {
+    font-size: 18px; font-weight: 500; line-height: 26px;
+    color: var(--black-85); text-align: center;
   }
-  @keyframes ota-spin { to { transform: rotate(360deg); } }
-  .ob-txt { flex: 1 1 0; font-size: 14px; line-height: 20px; color: var(--black-85); font-weight: 500; min-width: 0; }
+  .ota-card .pct {
+    margin-top: 4px;
+    font-size: 20px; font-weight: 500; line-height: 28px;
+    color: var(--black-85); text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
   .ob-cancel {
-    flex-shrink: 0;
-    border: none; background: none;
-    padding: 6px 4px;
-    font-family: var(--font);
-    font-size: 14px; line-height: 20px;
+    height: 46px;
+    border-radius: 12px;
+    background: var(--btn-ghost);
+    border: 1px solid var(--border-2);
     color: var(--black-85);
+    font-family: var(--font);
+    font-size: 16px; line-height: 22px;
     cursor: pointer;
   }
   .ob-cancel:disabled { color: var(--black-45); cursor: default; }
@@ -883,7 +898,6 @@
     height: 6px;
     border-radius: 3px;
     background: var(--bg-disabled);
-    margin-top: 10px;
     overflow: hidden;
   }
   .ob-fill {
@@ -2445,18 +2459,20 @@
   .phone.view-discover .notify-view, .phone.view-discover .devices-view,
   .phone.view-discover .adddev-view, .phone.view-discover .project-view { display: none; }
 
-  /* Title — Figma 3322:157957: left16 / top69 / w361, 20px Medium, centred. */
+  /* Title — Figma 3322:157957 Frame 14: left16 / top69 / 361×46,
+     20px Medium centred in the frame. */
   .disc-title {
-    position: absolute; left: 16px; top: 69px; width: 361px;
+    position: absolute; left: 16px; top: 69px; width: 361px; height: 46px;
+    display: flex; align-items: center; justify-content: center;
     font-size: 20px; font-weight: 500; line-height: 28px;
     color: var(--black-85); text-align: center;
   }
 
-  /* Scroll column — Figma content starts at y=113 with 16px gaps. The box
-     begins at y=97 so the mascot (root-level at y=97, 120x120) can sit
+  /* Scroll column — content frame starts at y=131, 16px under the 46px
+     title. The box begins at y=115 so the mascot (y=115, 120×120) can sit
      inside it and still travel with the content while scrolling. */
   .disc-scroll {
-    position: absolute; left: 16px; top: 97px; width: 361px;
+    position: absolute; left: 16px; top: 115px; width: 361px;
     bottom: var(--tabbar-top);
     overflow-y: auto; overflow-x: hidden;
     overscroll-behavior: contain;
@@ -2479,7 +2495,7 @@
     font-size: 20px; font-weight: 700; line-height: 28px;
     color: var(--black-85);
   }
-  /* Figma 3361:159128: 120x120 mascot at x=241 / y=97, deliberately
+  /* Figma 3361:159128: 120x120 mascot at x=241 / y=115, deliberately
      overflowing the banner's top edge. Coloured illustration — keep .mono
      OFF so dark theme never inverts it; pointer-transparent like Figma. */
   .disc-mascot {
@@ -3637,8 +3653,8 @@
   <div class="chat-view" data-page-node-id="pRqfyNhhA17gfkjQFcdBDi">
 
     <div class="chat-header" data-page-node-id="Y7S33cPP3dkMFcdfqmjRKh">
-      <button class="ch-round" id="chat-back" aria-label="Back" data-page-node-id="Bk2eDD8ItBUjCWAd0DPuG1">
-        <img class="mono" src="assets/icon_back.svg" alt="" data-page-node-id="IGXBvR47KARGusMcWDt8J0">
+      <button class="ch-round" id="chat-back" aria-label="Open sidebar" data-page-node-id="Bk2eDD8ItBUjCWAd0DPuG1">
+        <img class="mono" src="assets/icon_move_upd.svg" alt="" data-page-node-id="IGXBvR47KARGusMcWDt8J0">
       </button>
       <div class="chat-title-block" id="chat-title-block" data-page-node-id="j030deu35e8hMTphhZ5yb1">
         <div class="name" id="chat-title" data-page-node-id="qDZpe892ZhGqbrmSA0xptG">Task</div>
@@ -3652,7 +3668,7 @@
       </div>
       <div class="ch-capsule" data-page-node-id="j6vkAriVgyiFyzi25nX5Ac">
         <button class="ch-round" id="chat-new" aria-label="New task" data-page-node-id="WdPfsBEK0cEFkf1QhmgWYJ">
-          <img class="mono" src="assets/icon_add.svg" alt="" data-page-node-id="XrWbzXRYpwD4ZnQxRd8SOL">
+          <img class="mono" src="assets/icon_m_chat1.svg" alt="" data-page-node-id="XrWbzXRYpwD4ZnQxRd8SOL">
         </button>
         <button class="ch-round" id="chat-more" aria-label="More" data-page-node-id="aOUlSA7TF9M4YiLEGwBdtD">
           <img class="mono" src="assets/icon_more.svg" alt="" data-page-node-id="OPAw3SDcmPpCvI3lhe9pxC">
@@ -4579,14 +4595,14 @@
     </div>
   </div>
 
-  <!-- Global OTA progress bubble: stay warning + % + Cancel. -->
-  <div class="ota-bubble" id="ota-bubble" data-page-node-id="S7PxutQ5TazHwnmumDPIPL">
-    <div class="ob-top" data-page-node-id="Gv6DkjIeXkgQfc6BuJAbiC">
-      <div class="ob-spin" id="ob-spin" data-page-node-id="7VvvU9QiDuKTbTmlMjHMPO"></div>
-      <span class="ob-txt" id="ob-txt" data-page-node-id="dDJyhCZqpWhPk3fa3wZQ2b">Updating…</span>
+  <!-- Centered OTA progress dialog: stay warning + % + progress + Cancel. -->
+  <div class="ota-bubble" id="ota-bubble" role="dialog" aria-modal="true" aria-labelledby="ob-txt" data-page-node-id="S7PxutQ5TazHwnmumDPIPL">
+    <div class="ota-card" data-page-node-id="Gv6DkjIeXkgQfc6BuJAbiC">
+      <div class="t" id="ob-txt" data-i18n="ota.stay" data-page-node-id="dDJyhCZqpWhPk3fa3wZQ2b">System update in progress. Please stay on this page</div>
+      <div class="pct" id="ob-pct" data-page-node-id="7VvvU9QiDuKTbTmlMjHMPO">0%</div>
+      <div class="ob-bar" data-page-node-id="DgtFJwpU9rLMgebTrozsUF"><div class="ob-fill" id="ob-fill" data-page-node-id="TCTky1WO8rrFtBBg1GbQ9K"></div></div>
       <button class="ob-cancel" id="ob-cancel" data-i18n="ota.cancel" data-page-node-id="NA2zi8SQp1n7kB7d9OQqnX">Cancel</button>
     </div>
-    <div class="ob-bar" data-page-node-id="DgtFJwpU9rLMgebTrozsUF"><div class="ob-fill" id="ob-fill" data-page-node-id="TCTky1WO8rrFtBBg1GbQ9K"></div></div>
   </div>
 
   <!-- 08-10 Resource search: full-screen page from the search icon in the
@@ -4658,7 +4674,7 @@
       'ver.update': 'Update', 'ver.changelog': 'Release Notes',
       'ver.newAvailable': 'New version', 'ver.noLog': 'No release notes yet',
       'ver.checking': 'Checking…',
-      'ota.stay': 'Hot update in progress — please stay',
+      'ota.stay': 'System update in progress. Please stay on this page',
       'ota.updating': 'Updating ', 'ota.cancel': 'Cancel',
       'ota.cancelling': 'Cancelling…', 'ota.cancelled': 'Update cancelled',
       'ota.blocked': 'Please wait until the update finishes',
@@ -4793,7 +4809,7 @@
       'ver.update': '更新', 'ver.changelog': '更新记录',
       'ver.newAvailable': '有新版本', 'ver.noLog': '暂无更新记录',
       'ver.checking': '检查中…',
-      'ota.stay': '热更新中，请勿离开',
+      'ota.stay': '系统更新中，请勿离开本页面',
       'ota.updating': '正在更新 ', 'ota.cancel': '中断',
       'ota.cancelling': '正在中断…', 'ota.cancelled': '更新已中断',
       'ota.blocked': '请等待更新完成后再离开',
@@ -6842,7 +6858,7 @@
   }
   document.getElementById('chat-back').addEventListener('click', (e) => {
     e.stopPropagation();
-    closeChat();
+    phone.classList.add('drawer-open');
   });
   // Header: title opens the task sidebar, + starts a new task, ... opens
   // the small conversation menu.
@@ -7514,7 +7530,7 @@
   // ============ Android APK shell bridge ============
   // Only active in app mode, where the native shell injects window.CiviaNative.
   // Covers: (1) OTA hot update of the web bundle, (2) system back button.
-  const WEB_VERSION = '1.0.28';
+  const WEB_VERSION = '1.0.29';
   const UPDATE_URL = 'https://luact-nb.github.io/civia-ota/version.json';
 
   // "Me" page version row — shows the running bundle version in every mode;
@@ -7556,6 +7572,7 @@
   const verLogList = document.getElementById('ver-log-list');
   const otaBubble = document.getElementById('ota-bubble');
   const obTxt = document.getElementById('ob-txt');
+  const obPct = document.getElementById('ob-pct');
   const obFill = document.getElementById('ob-fill');
   const obCancel = document.getElementById('ob-cancel');
 
@@ -7589,13 +7606,10 @@
   // Keep the old name as an alias so any leftover call sites still work.
   function renderVerSheet() { renderVerPage(); }
 
-  function bubbleLabel(pct) {
-    const p = pct == null ? '' : (' · ' + pct + '%');
-    return t('ota.stay') + p;
-  }
   function showBubble() {
     obFill.style.width = '0%';
-    obTxt.textContent = bubbleLabel(0);
+    obTxt.textContent = t('ota.stay');
+    obPct.textContent = '0%';
     obCancel.disabled = false;
     otaBubble.classList.add('show');
     verBodyEl.classList.add('ob-visible');
@@ -7609,8 +7623,7 @@
     if (!verState.downloading || !verState.update) return;
     const p = Math.max(0, Math.min(100, Number(pct) || 0));
     obFill.style.width = p + '%';
-    if (total > 0) obTxt.textContent = bubbleLabel(p);
-    else obTxt.textContent = t('ota.stay') + ' · ' + fmtMb(Number(received) || 0);
+    obPct.textContent = total > 0 ? (p + '%') : fmtMb(Number(received) || 0);
   };
 
   function finishDownload(ok, msg) {
@@ -7732,8 +7745,8 @@
     if (IS_APP && window.CiviaNative) {
       try { window.CiviaNative.cancelUpdate(); }
       catch (err) { finishDownload(false, 'cancelled'); }
-    } else if (mockTimer) {
-      clearInterval(mockTimer); mockTimer = null;
+    } else {
+      if (mockTimer) { clearInterval(mockTimer); mockTimer = null; }
       finishDownload(false, 'cancelled');
     }
     setTimeout(() => {
