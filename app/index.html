@@ -1942,9 +1942,9 @@
 
   /* Floating "jump to latest" button + soft fade above the composer. */
   .chat-jump {
-    /* Sit just above the 24px soft fade (Figma 3376:161857). */
+    /* 24px between this button and the docked composer top. */
     position: absolute; left: 50%;
-    bottom: calc(var(--cmp-dock-foot) + var(--fade-soft-h) + 8px); z-index: 3;
+    bottom: calc(var(--cmp-dock-foot) + 24px); z-index: 3;
     transform: translateX(-50%);
     width: 36px; height: 36px; padding: 0; border-radius: 18px;
     border: 1px solid var(--border-2); background: var(--bg-container);
@@ -1952,6 +1952,9 @@
     display: flex; align-items: center; justify-content: center;
     cursor: pointer; transition: opacity 0.2s;
     -webkit-tap-highlight-color: transparent;
+  }
+  .phone.cmp-open .chat-jump {
+    bottom: calc(var(--cmp-foot, var(--cmp-dock-foot)) + 24px);
   }
   .chat-jump img { width: 20px; height: 20px; opacity: 0.65; }
   .chat-jump.hidden { opacity: 0; pointer-events: none; }
@@ -7530,7 +7533,7 @@
   // ============ Android APK shell bridge ============
   // Only active in app mode, where the native shell injects window.CiviaNative.
   // Covers: (1) OTA hot update of the web bundle, (2) system back button.
-  const WEB_VERSION = '1.0.29';
+  const WEB_VERSION = '1.0.30';
   const UPDATE_URL = 'https://luact-nb.github.io/civia-ota/version.json';
 
   // "Me" page version row — shows the running bundle version in every mode;
