@@ -30,8 +30,12 @@
        1-2px seam left by uniform scaling can never show as a light border. */
     --stage-bg: #ececec;
     --tabbar-top: 82px;   /* tab bar top edge = bottom(33) + height(49) */
-    /* Overlap fade into the tab bar so uniform scale() can't open a
-       1–2px hairline where the next card's clipped title bleeds through. */
+    /* Bottom-fade recipe (global):
+       1) Soft 16px ramp ABOVE chrome (list → tabbar / composer / keyboard).
+       2) Chrome itself (tabbar / composer veil) is fully opaque — never a
+          semi-transparent band where text can bleed through.
+       3) --fade-tab-overlap seals scale() hairlines into opaque chrome. */
+    --fade-soft-h: 16px;
     --fade-tab-overlap: 2px;
     --bg-container: #ffffff;
     --bg-layout: #f5f5f5;
@@ -399,7 +403,34 @@
      grows one 26px line at a time up to maxH 130 (5 lines), then the text
      area scrolls while the toolbar stays fixed. JS floats the composer
      above the keyboard (iOS order: input rides the keyboard top). */
-  .composer { width: 361px; }
+  .composer { width: 361px; position: relative; }
+  /* Soft veil UNDER the open card only (never over it): chat text in the
+     gap above the keyboard fades out over 16px. Pill/card stay at z-index 1
+     so the veil cannot dim the input — avoid z-index:-1 WebView bugs. */
+  .phone.cmp-open .composer {
+    z-index: 5;
+  }
+  .phone.cmp-open .composer-pill,
+  .phone.cmp-open .composer-card {
+    position: relative;
+    z-index: 1;
+  }
+  .phone.cmp-open .composer::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 393px;
+    /* Slight tuck under the card so the join never gaps; card (z=1) covers
+       the tuck. The strip below the card is FULLY opaque — no alpha ramp —
+       so chat text in the keyboard gap cannot bleed through. Soft fade lives
+       only on .chat-fade / .pj-fade ABOVE the composer. */
+    top: calc(100% - 4px);
+    height: var(--cmp-veil-h, 48px);
+    background: var(--bg-base);
+    z-index: 0;
+    pointer-events: none;
+  }
   .composer-pill {
     width: 361px;
     background: var(--bg-container);
@@ -1099,10 +1130,8 @@
   .drawer-fade {
     position: absolute;
     left: 0; right: 0; bottom: 0;
-    /* Taller solid-bottom ramp seals scale hairlines at the drawer foot
-       (same recipe as .task-fade; no chrome below to overlap into). */
-    height: calc(48px + var(--fade-tab-overlap));
-    background: linear-gradient(to bottom, var(--fade-start), var(--bg-base) 50%, var(--bg-base));
+    height: var(--fade-soft-h);
+    background: linear-gradient(to bottom, var(--fade-start), var(--bg-base));
     z-index: 6;
     pointer-events: none;
   }
@@ -1517,29 +1546,12 @@
   }
 
   .task-fade {
-    /* Figma 3375:161256 (updated 2026-11-26, replaces 3101:155388):
-       the bottom stack is now ONE 130px gradient frame — 48px padding-top
-       fade + 49px Tab bar + 33px Home Indicator — whose gradient reaches
-       solid bg-base at 36.538% (47.5px) and stays solid to the bottom.
-       Crucially the updated design's fade band is CLEAN: unlike 3101:155388
-       it no longer shows the clipped crown of the next list card, so content
-       must not bleed through above the bar. Our per-view fade is a 48px
-       overlay (the tab bar / home indicator stay separate opaque elements),
-       so we reproduce that continuous solid surface by making the lower
-       half of the band pure bg-base: upper 24px = smooth --fade-start →
-       bg-base ramp, lower 24px = solid bg-base, flush with the opaque tab
-       bar (gap = 0, no colour seam, no clipped glyph crowns).
-       --fade-start stays the exact Figma Transparency/0% token in light
-       mode; dark mode swaps to plain `transparent` (both alpha=0) because
-       some Android WebViews interpolate non-premultiplied and turn a
-       white-transparent → near-black ramp into a grey haze.
-       bottom/height overlap the tab bar by --fade-tab-overlap so scale()
-       hairlines cannot open a gap above the bar. */
+    /* Soft 16px ramp into the opaque tab bar (global fade recipe). */
     position: absolute;
     left: 0; right: 0;
     bottom: calc(var(--tabbar-top) - var(--fade-tab-overlap));
-    height: calc(48px + var(--fade-tab-overlap));
-    background: linear-gradient(to bottom, var(--fade-start), var(--bg-base) 50%, var(--bg-base));
+    height: calc(var(--fade-soft-h) + var(--fade-tab-overlap));
+    background: linear-gradient(to bottom, var(--fade-start), var(--bg-base));
     z-index: 2;
     pointer-events: none;
   }
@@ -1596,6 +1608,8 @@
     overflow-y: auto;
     scrollbar-width: none;
   }
+  /* cmp-open: foot tracks the floated composer top via --cmp-foot (cmpFloat). */
+  .phone.cmp-open .pj-scroll { bottom: var(--cmp-foot, 174px); }
   .pj-scroll::-webkit-scrollbar { display: none; }
   .pj-list {
     width: 361px;
@@ -1652,16 +1666,16 @@
   }
 
   .pj-fade {
-    /* Same clean solid-bottom ramp as .task-fade: overlap the composer dock
-       (scroll/fade meet at 174) so scale() can't open a hairline for card titles. */
+    /* Soft ramp at scroll foot — never into the composer (z under card). */
     position: absolute;
     left: 0; right: 0;
-    bottom: calc(174px - var(--fade-tab-overlap));
-    height: calc(48px + var(--fade-tab-overlap));
-    background: linear-gradient(to bottom, var(--fade-start), var(--bg-base) 50%, var(--bg-base));
-    z-index: 2;
+    bottom: 174px;
+    height: var(--fade-soft-h);
+    background: linear-gradient(to bottom, var(--fade-start), var(--bg-base));
+    z-index: 0;
     pointer-events: none;
   }
+  .phone.cmp-open .pj-fade { bottom: var(--cmp-foot, 174px); }
   .pj-input {
     position: absolute;
     left: 16px;
@@ -1674,20 +1688,9 @@
     position: absolute;
     left: 16px;
     bottom: 98px;
-    z-index: 1;
+    z-index: 3;
   }
-  /* Full-bleed opaque seal under .pj-fade — composer itself is inset 16px
-     and cannot cover a center hairline on its own. */
-  .project-view::after {
-    content: "";
-    position: absolute;
-    left: 0; right: 0;
-    bottom: calc(174px - var(--fade-tab-overlap));
-    height: var(--fade-tab-overlap);
-    background: var(--bg-base);
-    z-index: 1;
-    pointer-events: none;
-  }
+  .phone.cmp-open .project-view .composer { z-index: 5; }
 
   /* ============ Search view (Figma 3130:165656 default / 3130:165997 no result) ============ */
   .search-view { position: absolute; inset: 0; display: none; background: var(--bg-base); }
@@ -1774,7 +1777,8 @@
     scrollbar-width: none;
     padding: 12px 20px 24px;
   }
-  .phone.cmp-open .chat-scroll { bottom: 224px; }  /* card is taller while focused */
+  /* cmp-open: foot tracks floated composer top (--cmp-foot from cmpFloat). */
+  .phone.cmp-open .chat-scroll { bottom: var(--cmp-foot, 224px); }
   .chat-scroll::-webkit-scrollbar { display: none; }
   .chat-list { width: 100%; display: flex; flex-direction: column; gap: 24px; }
 
@@ -1931,20 +1935,15 @@
   .chat-jump img { width: 20px; height: 20px; opacity: 0.65; }
   .chat-jump.hidden { opacity: 0; pointer-events: none; }
   .chat-fade {
-    /* Default: covers scroll foot (160) down to composer host (100).
-       Overlaps the host by --fade-tab-overlap; solid lower half on --chat-bg. */
+    /* Soft ramp at scroll foot — never into the composer. */
     position: absolute; left: 0; right: 0;
-    bottom: calc(100px - var(--fade-tab-overlap));
-    height: calc(60px + var(--fade-tab-overlap));
-    z-index: 2;
+    bottom: 160px;
+    height: var(--fade-soft-h);
+    z-index: 1;
     pointer-events: none;
-    background: linear-gradient(to bottom, var(--fade-start), var(--chat-bg) 50%, var(--chat-bg));
+    background: linear-gradient(to bottom, var(--fade-start), var(--chat-bg));
   }
-  /* cmp-open raises .chat-scroll to 224 — grow the fade so the 224→160 band
-     stays masked (composer host remains at bottom:100). */
-  .phone.cmp-open .chat-fade {
-    height: calc(124px + var(--fade-tab-overlap));
-  }
+  .phone.cmp-open .chat-fade { bottom: var(--cmp-foot, 224px); }
 
   .chat-view .bottom {
     /* Same docked position as the home view: composer bottom sits 18px above
@@ -1952,16 +1951,12 @@
        itself is the very same element, so pill/card/keyboard behaviour is
        identical to home — only this host anchor needed aligning. */
     position: absolute; left: 0; right: 0; bottom: 100px;
+    z-index: 5;                     /* always above .chat-fade */
     display: flex; flex-direction: column; align-items: center;
   }
-  .chat-view .bottom::before {
-    content: "";
-    position: absolute;
-    left: 0; right: 0;
-    top: calc(-1 * var(--fade-tab-overlap));
-    height: var(--fade-tab-overlap);
-    background: var(--chat-bg);
-    pointer-events: none;
+  .phone.cmp-open .main .bottom {
+    position: relative;
+    z-index: 5;
   }
 
   .phone.view-search .search-view { display: block; }
@@ -2061,8 +2056,8 @@
     position: absolute;
     left: 0; right: 0;
     bottom: calc(var(--sch-bottom) - var(--fade-tab-overlap));
-    height: calc(48px + var(--fade-tab-overlap));
-    background: linear-gradient(to bottom, var(--fade-start), var(--bg-base) 50%, var(--bg-base));
+    height: calc(var(--fade-soft-h) + var(--fade-tab-overlap));
+    background: linear-gradient(to bottom, var(--fade-start), var(--bg-base));
     z-index: 2;
     pointer-events: none;
   }
@@ -2422,8 +2417,8 @@
     background: var(--bg-base);
     z-index: 1;
   }
-  /* Opaque seal into the fade band — closes the scale() hairline between
-     the per-view gradient and the tab bar so list text cannot leak. */
+  /* Opaque seal above the tab bar — fully solid (no alpha) so list text
+     cannot bleed through the soft-fade → tabbar join under scale(). */
   .app-tabbar::before {
     content: "";
     position: absolute;
@@ -2536,14 +2531,11 @@
   .disc-row .dr-val { font-size: 16px; line-height: 22px; color: var(--black-65); }
   .disc-row .dr-r img { width: 16px; height: 16px; display: block; flex-shrink: 0; }
 
-  /* Figma 3375:161256 — the updated single 130px bottom stack (48 fade +
-     49 tab bar + 33 home). Same clean solid-bottom ramp as .task-fade:
-     the fade band no longer lets the next card's clipped title show through. */
   .disc-fade {
     position: absolute; left: 0; right: 0;
     bottom: calc(var(--tabbar-top) - var(--fade-tab-overlap));
-    height: calc(48px + var(--fade-tab-overlap));
-    background: linear-gradient(to bottom, var(--fade-start), var(--bg-base) 50%, var(--bg-base));
+    height: calc(var(--fade-soft-h) + var(--fade-tab-overlap));
+    background: linear-gradient(to bottom, var(--fade-start), var(--bg-base));
     z-index: 2; pointer-events: none;
   }
 
@@ -2585,8 +2577,8 @@
   .me-fade {
     position: absolute; left: 0; right: 0;
     bottom: calc(var(--tabbar-top) - var(--fade-tab-overlap));
-    height: calc(48px + var(--fade-tab-overlap));
-    background: linear-gradient(to bottom, var(--fade-start), var(--bg-base) 50%, var(--bg-base));
+    height: calc(var(--fade-soft-h) + var(--fade-tab-overlap));
+    background: linear-gradient(to bottom, var(--fade-start), var(--bg-base));
     z-index: 2; pointer-events: none;
   }
   .me-profile {
@@ -2865,12 +2857,10 @@
   .notify-list::-webkit-scrollbar { display: none; }
 
   .notify-fade {
-    /* Figma 3375:161256 — same clean solid-bottom ramp as .task-fade /
-       .disc-fade, including the theme-aware --fade-start. */
     position: absolute; left: 0; right: 0;
     bottom: calc(var(--tabbar-top) - var(--fade-tab-overlap));
-    height: calc(48px + var(--fade-tab-overlap));
-    background: linear-gradient(to bottom, var(--fade-start), var(--bg-base) 50%, var(--bg-base));
+    height: calc(var(--fade-soft-h) + var(--fade-tab-overlap));
+    background: linear-gradient(to bottom, var(--fade-start), var(--bg-base));
     z-index: 2; pointer-events: none;
   }
 
@@ -2940,12 +2930,11 @@
     scrollbar-width: none;
   }
   .dev-list::-webkit-scrollbar { display: none; }
-  /* Same bottom-stack fade as .notify-fade / .task-fade. */
   .dev-fade {
     position: absolute; left: 0; right: 0;
     bottom: calc(var(--tabbar-top) - var(--fade-tab-overlap));
-    height: calc(48px + var(--fade-tab-overlap));
-    background: linear-gradient(to bottom, var(--fade-start), var(--bg-base) 50%, var(--bg-base));
+    height: calc(var(--fade-soft-h) + var(--fade-tab-overlap));
+    background: linear-gradient(to bottom, var(--fade-start), var(--bg-base));
     z-index: 2; pointer-events: none;
   }
 
@@ -6031,6 +6020,23 @@
     }
     composerEl.style.transform =
       `translateY(${(targetBottom - cmpTopBase).toFixed(1)}px)`;
+
+    // Sync scroll/fade foot + under-card veil to the floated card so list
+    // text never paints through the composer or in the keyboard gap.
+    // --cmp-foot = distance from phone bottom up to the card's TOP edge
+    //              (scroll/fade bottom). --cmp-veil-h covers card→chrome.
+    void composerEl.offsetHeight;                   // flush transform
+    const phoneRect = phone.getBoundingClientRect();
+    const cmpRect = composerEl.getBoundingClientRect();
+    const s = phoneRect.width / 393 || 1;
+    const cmpTopY = (cmpRect.top - phoneRect.top) / s;
+    const cmpBotY = (cmpRect.bottom - phoneRect.top) / s;
+    const foot = Math.max(0, 852 - cmpTopY);
+    // Opaque plate from card bottom down to phone bottom (+ tuck). Keep a
+    // floor so the keyboard gap is always fully covered even mid-measure.
+    const veil = Math.max(48, Math.min(280, 852 - cmpBotY + 12));
+    phone.style.setProperty('--cmp-foot', foot.toFixed(1) + 'px');
+    phone.style.setProperty('--cmp-veil-h', veil.toFixed(1) + 'px');
   }
   // The real keyboard animates without a DOM resize of the phone — follow it
   // via the visual viewport.
@@ -6171,6 +6177,8 @@
     cmpInput.blur();
     cmpVal.textContent = '';
     composerEl.style.transform = '';
+    phone.style.removeProperty('--cmp-foot');
+    phone.style.removeProperty('--cmp-veil-h');
     cmpSendBtn.disabled = true;
     cmpSendIc.src = 'assets/icon_send_off.svg';
   }
@@ -7480,7 +7488,7 @@
   // ============ Android APK shell bridge ============
   // Only active in app mode, where the native shell injects window.CiviaNative.
   // Covers: (1) OTA hot update of the web bundle, (2) system back button.
-  const WEB_VERSION = '1.0.20';
+  const WEB_VERSION = '1.0.21';
   const UPDATE_URL = 'https://luact-nb.github.io/civia-ota/version.json';
 
   // "Me" page version row — shows the running bundle version in every mode;
