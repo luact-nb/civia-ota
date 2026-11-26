@@ -30,6 +30,9 @@
        1-2px seam left by uniform scaling can never show as a light border. */
     --stage-bg: #ececec;
     --tabbar-top: 82px;   /* tab bar top edge = bottom(33) + height(49) */
+    /* Overlap fade into the tab bar so uniform scale() can't open a
+       1–2px hairline where the next card's clipped title bleeds through. */
+    --fade-tab-overlap: 2px;
     --bg-container: #ffffff;
     --bg-layout: #f5f5f5;
     /* Conversation surface: pure white like the home page; user turns are
@@ -1523,10 +1526,13 @@
        --fade-start stays the exact Figma Transparency/0% token in light
        mode; dark mode swaps to plain `transparent` (both alpha=0) because
        some Android WebViews interpolate non-premultiplied and turn a
-       white-transparent → near-black ramp into a grey haze. */
+       white-transparent → near-black ramp into a grey haze.
+       bottom/height overlap the tab bar by --fade-tab-overlap so scale()
+       hairlines cannot open a gap above the bar. */
     position: absolute;
-    left: 0; right: 0; bottom: var(--tabbar-top);
-    height: 48px;
+    left: 0; right: 0;
+    bottom: calc(var(--tabbar-top) - var(--fade-tab-overlap));
+    height: calc(48px + var(--fade-tab-overlap));
     background: linear-gradient(to bottom, var(--fade-start), var(--bg-base) 50%, var(--bg-base));
     z-index: 2;
     pointer-events: none;
@@ -2374,6 +2380,17 @@
     background: var(--bg-base);
     z-index: 1;
   }
+  /* Opaque seal into the fade band — closes the scale() hairline between
+     the per-view gradient and the tab bar so list text cannot leak. */
+  .app-tabbar::before {
+    content: "";
+    position: absolute;
+    left: 0; right: 0;
+    top: calc(-1 * var(--fade-tab-overlap));
+    height: var(--fade-tab-overlap);
+    background: var(--bg-base);
+    pointer-events: none;
+  }
 
   /* ============ Discover view (Figma 3322:157898 civia_移动端_发现) ============ */
   .discover-view { position: absolute; inset: 0; display: none; }
@@ -2481,8 +2498,9 @@
      49 tab bar + 33 home). Same clean solid-bottom ramp as .task-fade:
      the fade band no longer lets the next card's clipped title show through. */
   .disc-fade {
-    position: absolute; left: 0; right: 0; bottom: var(--tabbar-top);
-    height: 48px;
+    position: absolute; left: 0; right: 0;
+    bottom: calc(var(--tabbar-top) - var(--fade-tab-overlap));
+    height: calc(48px + var(--fade-tab-overlap));
     background: linear-gradient(to bottom, var(--fade-start), var(--bg-base) 50%, var(--bg-base));
     z-index: 2; pointer-events: none;
   }
@@ -2800,7 +2818,9 @@
   .notify-fade {
     /* Figma 3375:161256 — same clean solid-bottom ramp as .task-fade /
        .disc-fade, including the theme-aware --fade-start. */
-    position: absolute; left: 0; right: 0; bottom: var(--tabbar-top); height: 48px;
+    position: absolute; left: 0; right: 0;
+    bottom: calc(var(--tabbar-top) - var(--fade-tab-overlap));
+    height: calc(48px + var(--fade-tab-overlap));
     background: linear-gradient(to bottom, var(--fade-start), var(--bg-base) 50%, var(--bg-base));
     z-index: 2; pointer-events: none;
   }
@@ -7392,7 +7412,7 @@
   // ============ Android APK shell bridge ============
   // Only active in app mode, where the native shell injects window.CiviaNative.
   // Covers: (1) OTA hot update of the web bundle, (2) system back button.
-  const WEB_VERSION = '1.0.18';
+  const WEB_VERSION = '1.0.19';
   const UPDATE_URL = 'https://luact-nb.github.io/civia-ota/version.json';
 
   // "Me" page version row — shows the running bundle version in every mode;
