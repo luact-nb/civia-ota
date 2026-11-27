@@ -1,8 +1,12 @@
 {
-  "version": "1.0.34",
+  "version": "1.0.35",
   "url": "https://luact-nb.github.io/civia-ota/web.zip",
-  "notes": "对话页返回按钮按入口直达来源页（通知/任务/项目），否则打开侧栏；项目页新增空状态、设备模式隐藏云操作；项目内新会话归属当前项目；新任务卡片排在置顶下方；搜索页文案与空态更新",
+  "notes": "发现页文案更新：Agents / Marketplace / Scientific Models / Connectors / Squads / Learning（中文：市场、学习）",
   "log": [
+    {
+      "v": "1.0.35",
+      "d": "发现页文案更新：Agents / Marketplace / Scientific Models / Connectors / Squads / Learning（中文：市场、学习）"
+    },
     {
       "v": "1.0.34",
       "d": "对话页返回按钮按入口直达来源页（通知/任务/项目），否则打开侧栏；项目页新增空状态、设备模式隐藏云操作；项目内新会话归属当前项目；新任务卡片排在置顶下方；搜索页文案与空态更新"
@@ -78,10 +82,6 @@
     {
       "v": "1.0.16",
       "d": "我的页容器宽度对齐 Figma（345→361）；修复安卓真机深色模式上下右浅色边（舞台色跟随主题）"
-    },
-    {
-      "v": "1.0.15",
-      "d": "发现板块上线：新增 Discover 页（hero/彩色卡片/四行入口）+ 深色模式配色与未选中图标对齐 Figma；修复安卓 MAC 设备图标不显示"
     }
   ]
 }
