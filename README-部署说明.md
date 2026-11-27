@@ -4,8 +4,8 @@
 
 - **更新站地址**：`https://luact-nb.github.io/civia-ota/`（GitHub Pages，固定地址）
 - **手机下载页**：`https://luact-nb.github.io/civia-ota/`（APK 直链 `/Civia.apk`）
-- **当前版本**：APK v1.0.10（versionCode 11，内置 web 基线 v1.0.21）；线上热更 v1.0.21
-- **本次修复（2026-11-23）**：修正「检查更新失败: Value <!DOCTYPE …」报错，见文末「排障」。
+- **当前版本**：APK v1.0.18（versionCode 19，内置 web 基线 v1.0.33）；线上热更 v1.0.33
+- **本次更新（2026-11-27）**：通知页改为任务通知：点击通知卡直达对应任务会话，通知文案与任务列表对齐。
   ⚠️ **已安装旧版的用户必须重新下载安装本页 APK 覆盖安装**（无需卸载，数据保留），
   因为坏地址写死在旧包里，热更无法自救。
 - 实现：本机 `python3 -m http.server 8942`（服务 civia-ota/）+
