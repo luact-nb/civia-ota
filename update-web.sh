@@ -74,4 +74,9 @@ with open(p, 'w') as f:
 PY
 
 echo "OK: web.zip + version.json regenerated for v$VER"
+
+# Keep the download page's single-source RELEASE block in sync (OTA version).
+# APK version/size are stamped by build.sh after the new APK is signed.
+python3 "$HERE/stamp-release.py" --ota-ver "$VER"
+
 echo "    upload civia-ota/ to $BASE (index.html, version.json, web.zip, Civia.apk)"
