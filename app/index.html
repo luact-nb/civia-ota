@@ -1220,8 +1220,9 @@
   }
   .sb-group-head img { width: 16px; height: 16px; display: block; }
   .sb-group-head img.add { cursor: pointer; }
-  /* Workspace "+" (new project) is cloud-only: device mode hides it. */
-  .phone.mode-device #pj-add-btn { display: none; }
+  /* Workspace "+" (new project) and deleting a project are cloud-only. */
+  .phone.mode-device #pj-add-btn,
+  .phone.mode-device #pj-delete-btn { display: none; pointer-events: none; }
 
   .sb-list { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
   /* Pinned group rows sit 12px apart (Figma 3196:11427). */
@@ -1627,6 +1628,17 @@
   /* cmp-open: foot tracks the floated composer top via --cmp-foot (cmpFloat). */
   .phone.cmp-open .pj-scroll { bottom: var(--cmp-foot, var(--cmp-dock-foot)); }
   .pj-scroll::-webkit-scrollbar { display: none; }
+  /* Same mascot block as the task tab (160×160 + copy), sitting at the
+     same page y as .task-empty (task-scroll top 181 + empty top 142). */
+  .pj-empty {
+    position: absolute; left: 50%; top: 323px;
+    transform: translateX(-50%);
+    display: none; flex-direction: column; align-items: center; gap: 24px; width: 160px;
+  }
+  .pj-empty img { width: 160px; height: 160px; display: block; }
+  .pj-empty .txt { font-size: 16px; line-height: 22px; color: var(--black-45); text-align: center; }
+  .phone.pj-empty-on .project-view .pj-empty { display: flex; }
+  .phone.pj-empty-on #pj-list { display: none; }
   .pj-list {
     width: 361px;
     margin-left: 16px;
@@ -1783,6 +1795,9 @@
     color: var(--black-85);
   }
   .ch-menu button:active { background: var(--pill-hover); }
+  /* Project chats keep only the new-conversation shortcut. */
+  .phone.chat-from-project #chat-more,
+  .phone.chat-from-project .ch-menu { display: none; }
 
   .chat-scroll {
     position: absolute; left: 0; right: 0;
@@ -3584,6 +3599,11 @@
       </div>
     </div>
 
+    <div class="pj-empty" id="pj-empty">
+      <img src="assets/mxj_no_task.png" alt="">
+      <div class="txt" data-i18n="task.empty">No task</div>
+    </div>
+
     <!-- Long-press action menu on task cards (Figma 3199:137883):
          Rename / Pin(Unpin) / Remove / Move to Project / Delete. -->
     <div class="sb-lpmenu" id="pj-lpmenu" data-page-node-id="HgNDuCWm0oCKfsDPi2VRRJ">
@@ -3624,7 +3644,7 @@
     <div class="sch-bar" data-page-node-id="KjSEjFX8S1LPtndXBuFl8U">
       <div class="sch-input" data-page-node-id="60xgF7jj80sjXYLwLyUqYD">
         <img class="mono" src="assets/icon_search.svg" alt="" data-page-node-id="VxI9AaaPq76gJPHmbvhpQC">
-        <input id="sch-input" type="text" placeholder="Search task history" autocomplete="off" data-page-node-id="yhT4BdOJkPnkfxAqXRiwT3">
+        <input id="sch-input" type="text" placeholder="Search this project's tasks" autocomplete="off" data-page-node-id="yhT4BdOJkPnkfxAqXRiwT3">
         <button class="sch-clear" id="sch-clear" aria-label="Clear" data-page-node-id="QG25WNOyUAGlLKwdWKbww4">
           <img class="mono" src="assets/icon_clear.svg" alt="" data-page-node-id="HxlllXYACGNj8giaK6DSkc">
         </button>
@@ -3637,8 +3657,8 @@
     </div>
 
     <div class="sch-empty" data-page-node-id="i4JVWGN8Q3vEQHt8DIILSl">
-      <img src="assets/mxj_no_result.png" alt="" data-page-node-id="dELHgydo2XfxacFkF3pgn5">
-      <div class="txt" data-i18n="search.noresult" data-page-node-id="daYoTm62mDlFUZ5Y5uRhoN">No results found</div>
+      <img src="assets/mxj_no_task.png" alt="" data-page-node-id="dELHgydo2XfxacFkF3pgn5">
+      <div class="txt" data-i18n="task.empty" data-page-node-id="daYoTm62mDlFUZ5Y5uRhoN">No task</div>
     </div>
 
     <div class="sch-fade" data-page-node-id="gHid2xfzuZ360iGeXV5Pyj"></div>
@@ -4770,7 +4790,7 @@
       'state.online': 'Online', 'state.offline': 'Offline',
       'notify.empty': 'No new notifications',
       'net.title': 'No Network Available', 'net.sub': 'Check your network permissions and current network status', 'net.refresh': 'Refresh',
-      'search.ph': 'Search task history', 'search.cancel': 'Cancel', 'search.noresult': 'No results found',
+      'search.ph': 'Search this project\'s tasks', 'search.cancel': 'Cancel', 'search.noresult': 'No task',
       'kb.search': 'Search',
       'dev.title': 'Connected Devices', 'dev.empty': 'No new notifications',
       'dev.disconnect': 'Disconnect', 'dev.connect': 'Connect', 'dev.connected': 'Connected',
@@ -4904,7 +4924,7 @@
       'state.online': '在线', 'state.offline': '离线',
       'notify.empty': '暂无新通知',
       'net.title': '无网络连接', 'net.sub': '请检查网络权限及当前网络状态', 'net.refresh': '刷新',
-      'search.ph': '搜索历史任务', 'search.cancel': '取消', 'search.noresult': '未找到相关结果',
+      'search.ph': '搜索本项目任务', 'search.cancel': '取消', 'search.noresult': '暂无任务',
       'kb.search': '搜索',
       'dev.title': '已连接设备', 'dev.empty': '暂无新通知',
       'dev.disconnect': '断开连接', 'dev.connect': '连接', 'dev.connected': '已连接',
@@ -5017,6 +5037,7 @@
       r.classList.toggle('selected', !r.classList.contains('disabled') &&
         (dev ? (r.dataset.device === dev) : (r.dataset.device === 'Civia Cloud'))));
     if (typeof updateChatDevice === 'function') updateChatDevice();
+    if (typeof syncPjMoreMenu === 'function') syncPjMoreMenu();
   }
   function setDevice(name) {
     currentDevice = name && name !== 'Civia Cloud' ? name : null;
@@ -5077,6 +5098,10 @@
     pjSub.dataset.count = String(n);
     pjSub.textContent = t('proj.tasks') + ' · ' + n;
     syncPinMenu(name);
+    syncPjEmpty();
+    // view-chat hides .project-view, so a chat left open (including an
+    // unsent new task) has to close before the project page can show.
+    if (phone.classList.contains('view-chat')) closeChat();
     if (phone.classList.contains('cmp-open')) closeComposer();
     if (phone.classList.contains('att-open')) closeAttSheet();
     phone.classList.add('view-project');
@@ -5101,6 +5126,7 @@
   function closePjMenu() { phone.classList.remove('pjmenu-open'); }
   pjMoreBtn.addEventListener('click', (e) => {
     e.stopPropagation();
+    if (!phone.classList.contains('pjmenu-open')) syncPjMoreMenu();
     phone.classList.toggle('pjmenu-open');
   });
   pjMenu.addEventListener('click', (e) => e.stopPropagation());
@@ -5182,6 +5208,13 @@
     lbl.setAttribute('data-i18n', pinned ? 'pj.unpin' : 'pj.pin');
     lbl.textContent = t(pinned ? 'pj.unpin' : 'pj.pin');
   }
+  function syncPjMoreMenu() {
+    syncPinMenu(document.getElementById('pj-name').textContent.trim());
+    const del = document.getElementById('pj-delete-btn');
+    const device = phone.classList.contains('mode-device');
+    del.hidden = device;
+    del.setAttribute('aria-hidden', device ? 'true' : 'false');
+  }
   // Drawer marker: pinned project rows keep a 20x20 pin icon on the right.
   function syncDrawerPin(name) {
     const pinned = pinnedProjects.has(name);
@@ -5208,8 +5241,9 @@
     syncDrawerPin(name);
   });
 
-  // Delete: removes the project row and leaves the project page.
+  // Delete is cloud-only. Device mode hides the item; ignore a click anyway.
   document.getElementById('pj-delete-btn').addEventListener('click', () => {
+    if (phone.classList.contains('mode-device')) return;
     closePjMenu();
     const name = document.getElementById('pj-name').textContent.trim();
     const row = [...document.querySelectorAll('.drawer .sb-item.project')]
@@ -5384,6 +5418,11 @@
     const n = Math.max(0, parseInt(sub.dataset.count || '0', 10) + delta);
     sub.dataset.count = String(n);
     sub.textContent = t('proj.tasks') + ' · ' + n;
+    syncPjEmpty();
+  }
+  function syncPjEmpty() {
+    const empty = document.querySelectorAll('#pj-list .task-card').length === 0;
+    phone.classList.toggle('pj-empty-on', empty);
   }
   function openPjLpMenu(card, px, py) {
     closeLpMenu();
@@ -5442,6 +5481,7 @@
       pinnedPjCards.delete(card);
       card.classList.remove('lp-pinned');
       syncPjPinFlag(card);
+      placeBelowPinned(pjListEl, card, pinnedPjCards);
       showToast(t('pj.unpinned'));
     }
   });
@@ -5556,6 +5596,7 @@
       pinnedTvCards.delete(card);
       card.classList.remove('lp-pinned');
       syncPjPinFlag(card, pinnedTvCards);
+      placeBelowPinned(tvListEl, card, pinnedTvCards);
       showToast(t('pj.unpinned'));
     }
   });
@@ -5766,7 +5807,9 @@
     }
   });
   document.getElementById('lp-delete-btn').addEventListener('click', () => {
-    if (lpRow) lpRow.remove();
+    const blocked = lpRow && lpRow.classList.contains('project')
+      && phone.classList.contains('mode-device');
+    if (lpRow && !blocked) lpRow.remove();
     closeLpMenu();
   });
 
@@ -6135,7 +6178,7 @@
       if (curChatTask.fresh) {
         curChatTask.fresh = false;
         curChatTask.title = ellipsize(text, 26);
-        curChatTask.proj = t('task.self');
+        if (!curChatTask.proj) curChatTask.proj = t('task.self');
         chatTitleEl.textContent = curChatTask.title;
         addTaskCards(curChatTask);
         updateChatSub();
@@ -6144,15 +6187,17 @@
       chatScroll.scrollTop = chatScroll.scrollHeight;
       aiRespond(curChatTask);
     } else {
-      // new task from the home/project composer: create + open its chat
-      const proj = phone.classList.contains('view-project')
+      // Home composer starts a sidebar chat. The project-page composer
+      // files the task under the open project and returns there.
+      const fromProject = phone.classList.contains('view-project');
+      const proj = fromProject
         ? document.getElementById('pj-name').textContent.trim()
         : t('task.self');
       const task = { id: 't' + (++taskSeq), title: ellipsize(text, 26),
         status: 'run', proj, time: nowHM(), msgs: [] };
       task.msgs.push({ role: 'user', text, t: task.time });
       addTaskCards(task);
-      openChat(task);
+      openChat(task, { entry: fromProject ? 'project' : 'home' });
       renderChat();
       aiRespond(task);
     }
@@ -6816,6 +6861,7 @@
   function openChat(task, view) {
     curChatTask = task;
     chatViewStatus = view && view.status ? view.status : null;
+    applyChatEntry(view && view.entry);
     chatTitleEl.textContent = task.title;
     updateChatDevice();
     updateChatSub();
@@ -6831,15 +6877,44 @@
   function closeChat() {
     // Leaving does NOT abort a running generation (WorkBuddy semantics):
     // the reply keeps streaming and the card status updates in background.
+    // An unsent "New Task" draft has no card yet — drop it instead of
+    // keeping an empty conversation around.
     phone.classList.remove('view-chat', 'ch-menu-open');
     chatViewStatus = null;
+    if (curChatTask && curChatTask.fresh && !curChatTask.msgs.length) curChatTask = null;
+    applyChatEntry(null);
     dockComposer();
     measureCmpBase();
     cmpFloat();
   }
+  // notify / task / project: back arrow returns to that page.
+  // drawer / home / new (and anything else): sidebar button.
+  let chatEntry = null;
+  const chatBackBtn = document.getElementById('chat-back');
+  const chatBackIcon = chatBackBtn.querySelector('img');
+  function chatGoesBack(entry) {
+    return entry === 'notify' || entry === 'task' || entry === 'project';
+  }
+  function applyChatEntry(entry) {
+    chatEntry = entry || null;
+    const back = chatGoesBack(chatEntry);
+    chatBackIcon.src = back ? 'assets/icon_back.svg' : 'assets/icon_move_upd.svg';
+    chatBackBtn.setAttribute('aria-label', back ? 'Back' : 'Open sidebar');
+    const fromProject = chatEntry === 'project';
+    phone.classList.toggle('chat-from-project', fromProject);
+    if (fromProject) phone.classList.remove('ch-menu-open');
+  }
+  function leaveChat() {
+    const entry = chatEntry;
+    closeChat();
+    if (entry === 'notify') phone.classList.add('view-notify');
+    else if (entry === 'task') phone.classList.add('view-task');
+    else if (entry === 'project') phone.classList.add('view-project');
+  }
   document.getElementById('chat-back').addEventListener('click', (e) => {
     e.stopPropagation();
-    phone.classList.add('drawer-open');
+    if (chatGoesBack(chatEntry)) leaveChat();
+    else phone.classList.add('drawer-open');
   });
   // Header: title opens the task sidebar, + starts a new task, ... opens
   // the small conversation menu.
@@ -6852,9 +6927,20 @@
     // adds cmp-open during this very handler, and the guard would otherwise
     // close the card again on the same event's bubble phase.
     e.stopPropagation();
-    closeChat();
-    openComposer();
+    if (chatEntry === 'project') startProjectTaskChat();
+    else startNewTaskChat();
   });
+  // New blank chat that stays in the current project: back still returns
+  // to that project page, and the first send files the card there.
+  function startProjectTaskChat() {
+    const proj = document.getElementById('pj-name').textContent.trim() || t('task.self');
+    closeComposer();
+    phone.classList.remove('drawer-open', 'sheet-open', 'ch-menu-open');
+    const task = { id: 't' + (++taskSeq), title: t('drawer.newTask'),
+      status: 'run', proj, time: nowHM(), msgs: [], fresh: true };
+    openChat(task, { entry: 'project' });
+    openComposer();
+  }
   // Drawer "New Task": open a genuinely blank conversation with the composer
   // focused. The first sent message names the task, adds its card to the
   // lists and starts the AI reply (handled by the fresh flag in cmpSend).
@@ -6863,7 +6949,7 @@
     phone.classList.remove('drawer-open', 'sheet-open', 'ch-menu-open', 'view-project');
     const task = { id: 't' + (++taskSeq), title: t('drawer.newTask'),
       status: 'run', proj: t('task.self'), time: nowHM(), msgs: [], fresh: true };
-    openChat(task);
+    openChat(task, { entry: 'new' });
     openComposer();
   }
   document.querySelector('.drawer .new-task').addEventListener('click', (e) => {
@@ -6872,6 +6958,7 @@
   });
   document.getElementById('chat-more').addEventListener('click', (e) => {
     e.stopPropagation();
+    if (chatEntry === 'project') return;
     phone.classList.toggle('ch-menu-open');
   });
   document.addEventListener('click', (e) => {
@@ -6939,10 +7026,15 @@
   const staticCards = document.querySelectorAll(
     '.main .task-list .task-card, .task-view .task-list .task-card, #pj-list .task-card');
   staticCards.forEach(taskFromCard);
+  function chatEntryOfCard(card) {
+    if (card.closest('#pj-list')) return 'project';
+    if (card.closest('.task-view')) return 'task';
+    return null;
+  }
   staticCards.forEach(card => {
     card.addEventListener('click', (e) => {
       e.stopPropagation();
-      openChat(card.__task);
+      openChat(card.__task, { entry: chatEntryOfCard(card) });
     });
   });
 
@@ -6983,7 +7075,7 @@
       document.querySelectorAll('.drawer .sb-item.active:not(.project)').forEach(r => r.classList.remove('active'));
       row.classList.add('active');
       phone.classList.remove('drawer-open');
-      openChat(taskFromRow(row), { status: rowStatus(row) });
+      openChat(taskFromRow(row), { status: rowStatus(row), entry: 'drawer' });
     });
   });
 
@@ -7027,6 +7119,15 @@
     syncPinGroup();
   })();
 
+  // New cards sit under the pinned block. Pinned cards stay a prefix;
+  // if every card is pinned, the new one goes at the end.
+  function placeBelowPinned(list, card, pinnedSet) {
+    const cards = [...list.children].filter(el => el !== card && el.classList.contains('task-card'));
+    const firstUnpinned = cards.find(el => !pinnedSet.has(el));
+    if (firstUnpinned) list.insertBefore(card, firstUnpinned);
+    else list.appendChild(card);
+  }
+
   // A newly created task gets a card in every list it belongs to. Home has
   // no list (hero + composer only) — the Task tab and project lists do.
   function addTaskCards(task) {
@@ -7039,13 +7140,17 @@
       d.querySelector('.t-name').textContent = task.title;
       d.querySelector('.proj').textContent = task.proj;
       d.querySelector('.time').textContent = task.time;
-      d.addEventListener('click', (e) => { e.stopPropagation(); openChat(task); });
+      d.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openChat(task, { entry: chatEntryOfCard(d) });
+      });
       return d;
     };
     const tvCard = mk();
-    tvListEl.prepend(tvCard);
+    placeBelowPinned(tvListEl, tvCard, pinnedTvCards);
     bindLongPress(tvCard, openTvLpMenu);
-    if (phone.classList.contains('view-project')) {
+    const projectOwned = task.proj && task.proj !== t('task.self');
+    if (phone.classList.contains('view-project') || projectOwned) {
       const pjCard = mk();
       pjCard.querySelector('.proj').remove();          // pj cards use .sub style
       const row2 = pjCard.querySelector('.row2');
@@ -7053,13 +7158,14 @@
       sub.className = 'sub';
       sub.textContent = ellipsize(task.msgs[0].text, 32);
       row2.prepend(sub);
-      pjListEl.prepend(pjCard);
+      placeBelowPinned(pjListEl, pjCard, pinnedPjCards);
       bindLongPress(pjCard, openPjLpMenu);
       const pjSub = document.getElementById('pj-sub');
       const n = (parseInt(pjSub.dataset.count || '0', 10) || 0) + 1;
       pjSub.dataset.count = String(n);
       pjSub.textContent = t('proj.tasks') + ' · ' + n;
     }
+    syncPjEmpty();
     applyTaskFilter();
   }
 
@@ -7156,6 +7262,7 @@
       'view-devices', 'view-adddev', 'view-project', 'view-search', 'view-chat', 'view-version',
       'pjmenu-open', 'search-hasq', 'search-noresult', 'kb-open',
       'conn-open', 'attview-open', 'voice-open', 'cmp-running');
+    if (typeof applyChatEntry === 'function') applyChatEntry(null);
     if (tab === 'task') phone.classList.add('view-task');
     if (tab === 'discover') phone.classList.add('view-discover');
     if (tab === 'me') phone.classList.add('view-me');
@@ -7500,7 +7607,7 @@
     });
     if (!task) { showToast(t('notify.missing')); return; }
     phone.classList.remove('view-notify');
-    openChat(task);
+    openChat(task, { entry: 'notify' });
   });
 
   function applyNotifyFilter() {
@@ -7521,7 +7628,7 @@
   // ============ Android APK shell bridge ============
   // Only active in app mode, where the native shell injects window.CiviaNative.
   // Covers: (1) OTA hot update of the web bundle, (2) system back button.
-  const WEB_VERSION = '1.0.33';
+  const WEB_VERSION = '1.0.34';
   const UPDATE_URL = 'https://luact-nb.github.io/civia-ota/version.json';
 
   // "Me" page version row — shows the running bundle version in every mode;
@@ -7825,7 +7932,14 @@
       // 7. full-screen views, newest first
       if (phone.classList.contains('view-version')) { closeVerPage(); return true; }
       if (phone.classList.contains('view-search')) { document.getElementById('sch-cancel').click(); return true; }
-      if (phone.classList.contains('view-chat')) { closeChat(); return true; }
+      if (phone.classList.contains('view-chat')) {
+        if (phone.classList.contains('drawer-open')) {
+          phone.classList.remove('drawer-open');
+          return true;
+        }
+        leaveChat();
+        return true;
+      }
       if (phone.classList.contains('view-notify')) { phone.classList.remove('view-notify'); return true; }
       if (phone.classList.contains('view-adddev')) {
         phone.classList.remove('view-adddev', 'found');
